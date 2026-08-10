@@ -1,53 +1,34 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 // =====================================================
-// GMAIL SMTP TRANSPORTER
+// RESEND EMAIL SERVICE
 // =====================================================
 
-const transporter = nodemailer.createTransport({
-
-    // Do NOT use service: "gmail" here.
-    // We are explicitly using port 587 + STARTTLS.
-
-    host: "smtp.gmail.com",
-
-    port: 587,
-
-    secure: false,
-
-    requireTLS: true,
-
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-    },
-
-    // =================================================
-    // IMPORTANT FOR PRODUCTION
-    // Prevent SMTP request from hanging forever
-    // =================================================
-
-    connectionTimeout: 10000,
-
-    greetingTimeout: 10000,
-
-    socketTimeout: 15000
-
-});
+const resend = new Resend(
+    process.env.RESEND_API_KEY
+);
 
 
 // =====================================================
-// VERIFY SMTP CONNECTION
+// VERIFY EMAIL SERVICE
 // =====================================================
 
 export const verifyMailConnection = async () => {
 
     try {
 
-        await transporter.verify();
+        if (!process.env.RESEND_API_KEY) {
+
+            console.error(
+                "EMAIL SERVICE ERROR: RESEND_API_KEY is missing"
+            );
+
+            return;
+
+        }
 
         console.log(
-            "EMAIL SERVICE: SMTP connection successful"
+            "EMAIL SERVICE: Resend API configured successfully"
         );
 
     } catch (error) {
@@ -77,6 +58,19 @@ export const sendOTPEmail = async (
 ) => {
 
     try {
+
+        // =============================================
+        // CHECK API KEY
+        // =============================================
+
+        if (!process.env.RESEND_API_KEY) {
+
+            throw new Error(
+                "RESEND_API_KEY is not configured"
+            );
+
+        }
+
 
         // =============================================
         // DETERMINE EMAIL PURPOSE
@@ -127,99 +121,134 @@ export const sendOTPEmail = async (
 
 
         // =============================================
-        // MAIL OPTIONS
+        // FROM EMAIL
         // =============================================
+
+        /*
+            RESEND_FROM_EMAIL should be configured
+            in Render Environment Variables.
+
+            Example:
+
+            Our Memo <onboarding@resend.dev>
+
+            OR, after verifying your own domain:
+
+            Our Memo <noreply@yourdomain.com>
+        */
+
+        const fromEmail =
+            process.env.RESEND_FROM_EMAIL ||
+            "Our Memo <onboarding@resend.dev>";
 
         const mailOptions = {
 
-            from:
-                `"Our Memo" <${process.env.SMTP_USER}>`,
+            from: fromEmail,
 
-            to:
-                email,
+            to: email,
 
-            subject:
-                subject,
+            subject: subject,
 
-            html: `
+            html: html
+
+        };
+        // =============================================
+        // EMAIL HTML
+        // =============================================
+
+        const html = `
+
+            <div style="
+                font-family: Arial, sans-serif;
+                max-width: 520px;
+                margin: 0 auto;
+                padding: 30px;
+                background: #ffffff;
+                color: #111111;
+            ">
+
+                <h2 style="
+                    margin: 0 0 10px;
+                ">
+                    ${heading}
+                </h2>
+
+
+                <p style="
+                    color: #666666;
+                    line-height: 1.6;
+                ">
+                    ${description}
+                </p>
+
 
                 <div style="
-                    font-family: Arial, sans-serif;
-                    max-width: 520px;
-                    margin: 0 auto;
-                    padding: 30px;
-                    background: #ffffff;
-                    color: #111111;
+                    margin: 25px 0;
+                    padding: 22px;
+                    text-align: center;
+                    background: #f5f5f5;
+                    border-radius: 12px;
                 ">
 
-                    <h2 style="
+                    <p style="
                         margin: 0 0 10px;
-                    ">
-                        ${heading}
-                    </h2>
-
-
-                    <p style="
-                        color: #666666;
-                        line-height: 1.6;
-                    ">
-                        ${description}
-                    </p>
-
-
-                    <div style="
-                        margin: 25px 0;
-                        padding: 22px;
-                        text-align: center;
-                        background: #f5f5f5;
-                        border-radius: 12px;
-                    ">
-
-                        <p style="
-                            margin: 0 0 10px;
-                            color: #777777;
-                            font-size: 12px;
-                        ">
-                            YOUR VERIFICATION CODE
-                        </p>
-
-
-                        <strong style="
-                            font-size: 32px;
-                            letter-spacing: 8px;
-                        ">
-                            ${otp}
-                        </strong>
-
-                    </div>
-
-
-                    <p style="
-                        color: #666666;
-                        line-height: 1.6;
-                    ">
-                        This OTP is valid for
-                        <strong>10 minutes</strong>.
-                    </p>
-
-
-                    <p style="
-                        color: #999999;
+                        color: #777777;
                         font-size: 12px;
-                        line-height: 1.5;
                     ">
-                        ${footer}
+                        YOUR VERIFICATION CODE
                     </p>
+
+
+                    <strong style="
+                        font-size: 32px;
+                        letter-spacing: 8px;
+                    ">
+                        ${otp}
+                    </strong>
 
                 </div>
 
-            `
 
-        };
+                <p style="
+                    color: #666666;
+                    line-height: 1.6;
+                ">
+                    This OTP is valid for
+                    <strong>10 minutes</strong>.
+                </p>
+
+
+                <p style="
+                    color: #999999;
+                    font-size: 12px;
+                    line-height: 1.5;
+                ">
+                    ${footer}
+                </p>
+
+
+                <hr style="
+                    border: none;
+                    border-top: 1px solid #eeeeee;
+                    margin: 30px 0;
+                ">
+
+
+                <p style="
+                    color: #999999;
+                    font-size: 11px;
+                    text-align: center;
+                ">
+                    Our Memo
+                </p>
+
+            </div>
+
+        `;
 
 
         // =============================================
-        // SEND EMAIL
+        // LOG
         // =============================================
 
         console.log(
@@ -228,10 +257,51 @@ export const sendOTPEmail = async (
         );
 
 
-        const info =
-            await transporter.sendMail(
-                mailOptions
+        console.log(
+            "OTP EMAIL: Purpose:",
+            purpose
+        );
+
+
+        // =============================================
+        // SEND EMAIL USING RESEND API
+        // =============================================
+
+        const { data, error } =
+            await resend.emails.send({
+
+                from:
+                    fromEmail,
+
+                to:
+                    [email],
+
+                subject:
+                    subject,
+
+                html:
+                    html
+
+            });
+
+
+        // =============================================
+        // HANDLE RESEND ERROR
+        // =============================================
+
+        if (error) {
+
+            console.error(
+                "RESEND EMAIL ERROR:",
+                error
             );
+
+            throw new Error(
+                error.message ||
+                "Failed to send email"
+            );
+
+        }
 
 
         // =============================================
@@ -240,17 +310,17 @@ export const sendOTPEmail = async (
 
         console.log(
             "OTP EMAIL SENT:",
-            info.messageId
+            data?.id
         );
 
 
-        return info;
+        return data;
 
 
     } catch (error) {
 
         // =============================================
-        // EMAIL ERROR
+        // FINAL ERROR
         // =============================================
 
         console.error(
@@ -267,7 +337,7 @@ export const sendOTPEmail = async (
 
 
 // =====================================================
-// EXPORT TRANSPORTER
+// DEFAULT EXPORT
 // =====================================================
 
-export default transporter;
+export default resend;
