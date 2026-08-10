@@ -52,15 +52,67 @@ if (isProduction) {
 // FRONTEND CORS
 // =====================================================
 
-const frontendUrl =
-    process.env.FRONTEND_URL ||
-    "http://localhost:5173";
+const allowedOrigins = [
+
+    // Production frontend
+    "https://ourmemo.vercel.app",
+
+    // Previous Vercel URL
+    "https://our-memo-frontend-mauve.vercel.app",
+
+    // Local development
+    "http://localhost:5173"
+
+];
 
 
 app.use(
     cors({
 
-        origin: frontendUrl,
+        origin: function (
+            origin,
+            callback
+        ) {
+
+            // Allow requests without Origin
+            // such as Postman/server-to-server
+            if (!origin) {
+
+                return callback(
+                    null,
+                    true
+                );
+
+            }
+
+
+            if (
+                allowedOrigins.includes(
+                    origin
+                )
+            ) {
+
+                return callback(
+                    null,
+                    true
+                );
+
+            }
+
+
+            console.log(
+                "CORS BLOCKED ORIGIN:",
+                origin
+            );
+
+
+            return callback(
+                new Error(
+                    "Not allowed by CORS"
+                )
+            );
+
+        },
 
         credentials: true
 
@@ -132,7 +184,9 @@ app.use(
 // =====================================================
 
 
-// Google authentication
+// =====================================================
+// GOOGLE AUTHENTICATION
+// =====================================================
 
 app.use(
     "/auth",
@@ -140,7 +194,9 @@ app.use(
 );
 
 
-// Normal authentication
+// =====================================================
+// NORMAL AUTHENTICATION
+// =====================================================
 
 app.use(
     "/auth",
@@ -148,7 +204,9 @@ app.use(
 );
 
 
-// Photos
+// =====================================================
+// PHOTOS
+// =====================================================
 
 app.use(
     "/api/photos",
@@ -156,7 +214,9 @@ app.use(
 );
 
 
-// Folders
+// =====================================================
+// FOLDERS
+// =====================================================
 
 app.use(
     "/api/folders",
@@ -210,7 +270,12 @@ app.use(
 // =====================================================
 
 app.use(
-    (error, req, res, next) => {
+    (
+        error,
+        req,
+        res,
+        next
+    ) => {
 
         console.error(
             "GLOBAL ERROR:",
