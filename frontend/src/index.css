@@ -6149,3 +6149,59 @@ img {
 .register-change-email:hover {
     color: var(--text);
 }
+
+/* =========================================
+   FORGOT PASSWORD
+========================================= */
+
+.forgot-password-link {
+    flex-shrink: 0;
+
+    color: var(--text-secondary);
+
+    font-size: 13px;
+
+    font-weight: 500;
+
+    text-decoration: none;
+
+    transition:
+        color var(--transition);
+}
+
+.forgot-password-link:hover {
+    color: var(--text);
+    text-decoration: underline;
+}
+
+
+/* =========================================
+   REGISTER LINK
+========================================= */
+
+.login-register {
+    margin-top: 22px;
+
+    text-align: center;
+
+    color: var(--text-secondary);
+
+    font-size: 13px;
+}
+
+.register-link {
+    color: var(--text);
+
+    font-weight: 600;
+
+    text-decoration: none;
+
+    transition:
+        opacity var(--transition);
+}
+
+.register-link:hover {
+    opacity: 0.65;
+
+    text-decoration: underline;
+}

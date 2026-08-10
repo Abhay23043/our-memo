@@ -8,15 +8,15 @@ import {
     EyeOff
 } from "lucide-react";
 
-import { useNavigate } from "react-router-dom";
+import {
+    useNavigate,
+    Link
+} from "react-router-dom";
 
 import api from "../services/api";
 
 import { useAuth } from "../context/AuthContext";
 
-import {
-    Link
-} from "react-router-dom";
 
 function Login() {
 
@@ -25,9 +25,11 @@ function Login() {
     const { setUser } = useAuth();
 
 
-    const [email, setEmail] = useState("");
+    const [email, setEmail] =
+        useState("");
 
-    const [password, setPassword] = useState("");
+    const [password, setPassword] =
+        useState("");
 
     const [showPassword, setShowPassword] =
         useState(false);
@@ -88,6 +90,7 @@ function Login() {
             setLoading(false);
 
         }
+
     };
 
 
@@ -97,7 +100,9 @@ function Login() {
 
             <div className="login-card">
 
-                {/* Logo */}
+                {/* =========================================
+                    LOGO
+                ========================================= */}
 
                 <div className="login-logo">
 
@@ -113,6 +118,10 @@ function Login() {
                 </div>
 
 
+                {/* =========================================
+                    HEADING
+                ========================================= */}
+
                 <h1>
                     Welcome back
                 </h1>
@@ -122,23 +131,33 @@ function Login() {
                 </p>
 
 
-                {/* Error */}
+                {/* =========================================
+                    ERROR
+                ========================================= */}
 
                 {error && (
 
                     <div className="login-error">
+
                         {error}
+
                     </div>
 
                 )}
 
+
+                {/* =========================================
+                    LOGIN FORM
+                ========================================= */}
 
                 <form
                     onSubmit={handleSubmit}
                     className="login-form"
                 >
 
-                    {/* Email */}
+                    {/* =====================================
+                        EMAIL
+                    ===================================== */}
 
                     <div className="input-group">
 
@@ -167,7 +186,9 @@ function Login() {
                     </div>
 
 
-                    {/* Password */}
+                    {/* =====================================
+                        PASSWORD
+                    ===================================== */}
 
                     <div className="input-group">
 
@@ -194,12 +215,19 @@ function Login() {
                                 }
                                 required
                             />
+
+
+                            {/* FORGOT PASSWORD */}
+
                             <Link
                                 to="/forgot-password"
                                 className="forgot-password-link"
                             >
                                 Forgot password?
                             </Link>
+
+
+                            {/* PASSWORD VISIBILITY */}
 
                             <button
                                 type="button"
@@ -223,7 +251,9 @@ function Login() {
                     </div>
 
 
-                    {/* Login button */}
+                    {/* =====================================
+                        LOGIN BUTTON
+                    ===================================== */}
 
                     <button
                         type="submit"
@@ -241,6 +271,28 @@ function Login() {
                 </form>
 
 
+                {/* =========================================
+                    REGISTER LINK
+                ========================================= */}
+
+                <p className="login-register">
+
+                    Don't have an account?{" "}
+
+                    <Link
+                        to="/register"
+                        className="register-link"
+                    >
+                        Create account
+                    </Link>
+
+                </p>
+
+
+                {/* =========================================
+                    FOOTER
+                ========================================= */}
+
                 <p className="login-footer">
                     Our memories, just for us. ❤️
                 </p>
@@ -248,7 +300,10 @@ function Login() {
             </div>
 
         </main>
+
     );
+
 }
+
 
 export default Login;
