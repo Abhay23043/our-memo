@@ -25,7 +25,7 @@ import {
 
 import api from "../services/api";
 
-import "../styles/profile.css";
+import "../styles/Profile.css";
 
 
 function Profile() {
