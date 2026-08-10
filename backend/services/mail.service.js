@@ -1,6 +1,5 @@
 import nodemailer from "nodemailer";
 
-
 // =====================================================
 // GMAIL SMTP TRANSPORTER
 // =====================================================
@@ -12,7 +11,18 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
-    }
+    },
+
+    // =================================================
+    // IMPORTANT FOR PRODUCTION
+    // Prevent SMTP request from hanging forever
+    // =================================================
+
+    connectionTimeout: 10000,
+
+    greetingTimeout: 10000,
+
+    socketTimeout: 15000
 
 });
 
@@ -45,6 +55,7 @@ export const verifyMailConnection = async () => {
 
 // =====================================================
 // SEND OTP EMAIL
+//
 // PURPOSE:
 // "password-reset"
 // "registration"
@@ -58,9 +69,17 @@ export const sendOTPEmail = async (
 
     try {
 
+        // =============================================
+        // DETERMINE EMAIL PURPOSE
+        // =============================================
+
         const isRegistration =
             purpose === "registration";
 
+
+        // =============================================
+        // SUBJECT
+        // =============================================
 
         const subject =
             isRegistration
@@ -68,11 +87,19 @@ export const sendOTPEmail = async (
                 : "Your Our Memo Password Reset OTP";
 
 
+        // =============================================
+        // HEADING
+        // =============================================
+
         const heading =
             isRegistration
                 ? "Verify your email"
                 : "Reset your password";
 
+
+        // =============================================
+        // DESCRIPTION
+        // =============================================
 
         const description =
             isRegistration
@@ -80,11 +107,19 @@ export const sendOTPEmail = async (
                 : "We received a request to reset your Our Memo account password.";
 
 
+        // =============================================
+        // FOOTER
+        // =============================================
+
         const footer =
             isRegistration
                 ? "If you did not create an Our Memo account, you can safely ignore this email."
                 : "If you did not request a password reset, you can safely ignore this email.";
 
+
+        // =============================================
+        // MAIL OPTIONS
+        // =============================================
 
         const mailOptions = {
 
@@ -95,7 +130,6 @@ export const sendOTPEmail = async (
                 email,
 
             subject:
-
                 subject,
 
             html: `
@@ -175,11 +209,25 @@ export const sendOTPEmail = async (
         };
 
 
+        // =============================================
+        // SEND EMAIL
+        // =============================================
+
+        console.log(
+            "OTP EMAIL: Sending email to:",
+            email
+        );
+
+
         const info =
             await transporter.sendMail(
                 mailOptions
             );
 
+
+        // =============================================
+        // SUCCESS
+        // =============================================
 
         console.log(
             "OTP EMAIL SENT:",
@@ -192,10 +240,15 @@ export const sendOTPEmail = async (
 
     } catch (error) {
 
+        // =============================================
+        // EMAIL ERROR
+        // =============================================
+
         console.error(
             "SEND OTP EMAIL ERROR:",
-            error.message
+            error
         );
+
 
         throw error;
 
@@ -203,5 +256,9 @@ export const sendOTPEmail = async (
 
 };
 
+
+// =====================================================
+// EXPORT TRANSPORTER
+// =====================================================
 
 export default transporter;
