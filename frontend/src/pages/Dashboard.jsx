@@ -807,151 +807,94 @@ function Dashboard() {
 
 
     // =================================================
-    // UI
+    // NORMAL USERS
+    // =================================================
+    // No private gallery/dashboard content is rendered for normal users.
+    // The old Personal Use Only popup has been removed.
     // =================================================
 
-    return (
+    if (user?.role !== "admin") {
 
-        <main className="dashboard-page">
+        return (
 
-            {/* =================================================
-                PERSONAL USE ACCESS NOTICE
-                NORMAL USERS ONLY
-            ================================================= */}
-
-            {user?.role !== "admin" && (
+            <main className="dashboard-page">
 
                 <div
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="personal-use-title"
+                    className="dashboard-container"
                     style={{
-                        position: "fixed",
-                        inset: 0,
-                        zIndex: 9999,
+                        minHeight: "calc(100vh - 80px)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        padding: "20px",
-                        background: "rgba(0, 0, 0, 0.55)",
-                        backdropFilter: "blur(5px)"
+                        padding: "24px"
                     }}
                 >
 
-                    <div
+                    <section
                         style={{
-                            width: "min(460px, 100%)",
-                            padding: "28px",
-                            border: "1px solid var(--border)",
-                            borderRadius: "20px",
-                            background: "var(--surface)",
-                            color: "var(--text)",
-                            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.20)",
-                            textAlign: "center"
+                            width: "min(520px, 100%)",
+                            textAlign: "center",
+                            padding: "32px 24px"
                         }}
                     >
 
                         <div
                             style={{
-                                width: "52px",
-                                height: "52px",
+                                width: "56px",
+                                height: "56px",
                                 margin: "0 auto 18px",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                borderRadius: "15px",
-                                background: "var(--surface-soft)"
+                                borderRadius: "16px",
+                                background: "var(--surface-soft)",
+                                color: "var(--text)"
                             }}
                         >
 
-                            <Images size={24} />
+                            <Images size={26} />
 
                         </div>
 
-
-                        <h2
-                            id="personal-use-title"
+                        <h1
                             style={{
                                 margin: "0 0 10px",
-                                fontSize: "21px",
-                                letterSpacing: "-0.02em"
+                                fontSize: "24px"
                             }}
                         >
-                            Personal Use Only
-                        </h2>
-
-
-                        <p
-                            style={{
-                                margin: "0 auto 18px",
-                                maxWidth: "390px",
-                                color: "var(--text-secondary)",
-                                fontSize: "13px",
-                                lineHeight: "1.7"
-                            }}
-                        >
-                            To access the gallery content, please ask
-                            the administrator for access.
-                            This website is intended for personal use
-                            only and is not available for public access.
-                        </p>
-
-
-                        <div
-                            style={{
-                                marginBottom: "20px",
-                                padding: "13px 15px",
-                                borderRadius: "12px",
-                                background: "var(--surface-soft)",
-                                fontSize: "13px",
-                                lineHeight: "1.5"
-                            }}
-                        >
-
-                            <span
-                                style={{
-                                    display: "block",
-                                    marginBottom: "4px",
-                                    color: "var(--text-secondary)",
-                                    fontSize: "11px",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.06em"
-                                }}
-                            >
-                                Admin Contact
-                            </span>
-
-
-                            <a
-                                href="mailto:abhayjaiswal457@gmail.com"
-                                style={{
-                                    color: "var(--text)",
-                                    fontWeight: 600,
-                                    textDecoration: "none"
-                                }}
-                            >
-                                abhayjaiswal457@gmail.com
-                            </a>
-
-                        </div>
-
+                            Welcome to Our Memo
+                        </h1>
 
                         <p
                             style={{
                                 margin: 0,
                                 color: "var(--text-secondary)",
-                                fontSize: "11px"
+                                fontSize: "14px",
+                                lineHeight: 1.7
                             }}
                         >
-                            Thank you for understanding.
+                            Your account is active, but the private gallery
+                            and dashboard are available only to the administrator.
                         </p>
 
-                    </div>
+                    </section>
 
                 </div>
 
-            )}
+            </main>
 
+        );
+
+    }
+
+
+    // =================================================
+    // ADMIN DASHBOARD UI
+    // =================================================
+
+    return (
+
+        <main className="dashboard-page">
 
             <div className="dashboard-container">
 
