@@ -1,13 +1,12 @@
 import { Resend } from "resend";
 
 // =====================================================
-// RESEND EMAIL SERVICE
+// RESEND
 // =====================================================
 
 const resend = new Resend(
     process.env.RESEND_API_KEY
 );
-
 
 // =====================================================
 // VERIFY EMAIL SERVICE
@@ -15,33 +14,19 @@ const resend = new Resend(
 
 export const verifyMailConnection = async () => {
 
-    try {
-
-        if (!process.env.RESEND_API_KEY) {
-
-            console.error(
-                "EMAIL SERVICE ERROR: RESEND_API_KEY is missing"
-            );
-
-            return;
-
-        }
-
-        console.log(
-            "EMAIL SERVICE: Resend API configured successfully"
-        );
-
-    } catch (error) {
+    if (!process.env.RESEND_API_KEY) {
 
         console.error(
-            "EMAIL SERVICE ERROR:",
-            error.message
+            "EMAIL SERVICE ERROR: RESEND_API_KEY is missing"
         );
 
+        return;
     }
 
+    console.log(
+        "EMAIL SERVICE: Resend API configured successfully"
+    );
 };
-
 
 // =====================================================
 // SEND OTP EMAIL
@@ -60,20 +45,7 @@ export const sendOTPEmail = async (
     try {
 
         // =============================================
-        // CHECK API KEY
-        // =============================================
-
-        if (!process.env.RESEND_API_KEY) {
-
-            throw new Error(
-                "RESEND_API_KEY is not configured"
-            );
-
-        }
-
-
-        // =============================================
-        // DETERMINE EMAIL PURPOSE
+        // PURPOSE
         // =============================================
 
         const isRegistration =
@@ -106,7 +78,9 @@ export const sendOTPEmail = async (
 
         const description =
             isRegistration
+
                 ? "Use the verification code below to verify your email and complete your Our Memo account registration."
+
                 : "We received a request to reset your Our Memo account password.";
 
 
@@ -116,7 +90,9 @@ export const sendOTPEmail = async (
 
         const footer =
             isRegistration
+
                 ? "If you did not create an Our Memo account, you can safely ignore this email."
+
                 : "If you did not request a password reset, you can safely ignore this email.";
 
 
@@ -124,36 +100,15 @@ export const sendOTPEmail = async (
         // FROM EMAIL
         // =============================================
 
-        /*
-            RESEND_FROM_EMAIL should be configured
-            in Render Environment Variables.
-
-            Example:
-
-            Our Memo <onboarding@resend.dev>
-
-            OR, after verifying your own domain:
-
-            Our Memo <noreply@yourdomain.com>
-        */
-
         const fromEmail =
             process.env.RESEND_FROM_EMAIL ||
             "Our Memo <onboarding@resend.dev>";
 
-        const mailOptions = {
 
-            from: fromEmail,
-
-            to: email,
-
-            subject: subject,
-
-            html: html
-
-        };
         // =============================================
-        // EMAIL HTML
+        // HTML EMAIL
+        // IMPORTANT:
+        // html MUST be created BEFORE resend.emails.send()
         // =============================================
 
         const html = `
@@ -226,29 +181,13 @@ export const sendOTPEmail = async (
                     ${footer}
                 </p>
 
-
-                <hr style="
-                    border: none;
-                    border-top: 1px solid #eeeeee;
-                    margin: 30px 0;
-                ">
-
-
-                <p style="
-                    color: #999999;
-                    font-size: 11px;
-                    text-align: center;
-                ">
-                    Our Memo
-                </p>
-
             </div>
 
         `;
 
 
         // =============================================
-        // LOG
+        // SEND EMAIL USING RESEND
         // =============================================
 
         console.log(
@@ -256,37 +195,28 @@ export const sendOTPEmail = async (
             email
         );
 
-
         console.log(
             "OTP EMAIL: Purpose:",
             purpose
         );
 
 
-        // =============================================
-        // SEND EMAIL USING RESEND API
-        // =============================================
-
         const { data, error } =
             await resend.emails.send({
 
-                from:
-                    fromEmail,
+                from: fromEmail,
 
-                to:
-                    [email],
+                to: [email],
 
-                subject:
-                    subject,
+                subject: subject,
 
-                html:
-                    html
+                html: html
 
             });
 
 
         // =============================================
-        // HANDLE RESEND ERROR
+        // RESEND ERROR
         // =============================================
 
         if (error) {
@@ -300,7 +230,6 @@ export const sendOTPEmail = async (
                 error.message ||
                 "Failed to send email"
             );
-
         }
 
 
@@ -310,7 +239,7 @@ export const sendOTPEmail = async (
 
         console.log(
             "OTP EMAIL SENT:",
-            data?.id
+            data
         );
 
 
@@ -319,15 +248,10 @@ export const sendOTPEmail = async (
 
     } catch (error) {
 
-        // =============================================
-        // FINAL ERROR
-        // =============================================
-
         console.error(
             "SEND OTP EMAIL ERROR:",
             error
         );
-
 
         throw error;
 
@@ -337,7 +261,7 @@ export const sendOTPEmail = async (
 
 
 // =====================================================
-// DEFAULT EXPORT
+// EXPORT RESEND CLIENT
 // =====================================================
 
 export default resend;
