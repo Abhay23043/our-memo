@@ -16,8 +16,7 @@ import {
     Heart,
     UserPlus,
     CheckCircle,
-    ShieldCheck,
-    ArrowLeft
+    KeyRound
 } from "lucide-react";
 
 import api from "../services/api";
@@ -27,16 +26,6 @@ function Register() {
 
     const navigate =
         useNavigate();
-
-
-    // =================================================
-    // STEP
-    // 1 = REGISTRATION FORM
-    // 2 = OTP VERIFICATION
-    // =================================================
-
-    const [step, setStep] =
-        useState(1);
 
 
     // =================================================
@@ -55,23 +44,21 @@ function Register() {
     const [confirmPassword, setConfirmPassword] =
         useState("");
 
-
-    // =================================================
-    // OTP
-    // =================================================
-
-    const [otp, setOtp] =
+    const [secretKey, setSecretKey] =
         useState("");
 
 
     // =================================================
-    // PASSWORD VISIBILITY
+    // PASSWORD / SECRET KEY VISIBILITY
     // =================================================
 
     const [showPassword, setShowPassword] =
         useState(false);
 
     const [showConfirmPassword, setShowConfirmPassword] =
+        useState(false);
+
+    const [showSecretKey, setShowSecretKey] =
         useState(false);
 
 
@@ -82,22 +69,11 @@ function Register() {
     const [loading, setLoading] =
         useState(false);
 
-    const [resendLoading, setResendLoading] =
-        useState(false);
-
     const [error, setError] =
         useState("");
 
     const [success, setSuccess] =
         useState("");
-
-
-    // =================================================
-    // OTP RESEND TIMER
-    // =================================================
-
-    const [resendTimer, setResendTimer] =
-        useState(0);
 
 
     // =================================================
@@ -122,44 +98,7 @@ function Register() {
 
 
     // =================================================
-    // START RESEND TIMER
-    // =================================================
-
-    const startResendTimer = () => {
-
-        setResendTimer(60);
-
-        const timer =
-            setInterval(() => {
-
-                setResendTimer(
-                    current => {
-
-                        if (
-                            current <= 1
-                        ) {
-
-                            clearInterval(
-                                timer
-                            );
-
-                            return 0;
-
-                        }
-
-                        return current - 1;
-
-                    }
-                );
-
-            }, 1000);
-
-    };
-
-
-    // =================================================
     // REGISTER
-    // SEND OTP
     // =================================================
 
     const handleRegister =
@@ -173,19 +112,20 @@ function Register() {
             setSuccess("");
 
 
-            // -----------------------------------------
-            // REQUIRED
-            // -----------------------------------------
+            // =================================================
+            // REQUIRED FIELDS
+            // =================================================
 
             if (
                 !name.trim() ||
                 !email.trim() ||
                 !password ||
-                !confirmPassword
+                !confirmPassword ||
+                !secretKey.trim()
             ) {
 
                 setError(
-                    "Please fill in all fields."
+                    "Please fill in all fields, including the secret key."
                 );
 
                 return;
@@ -193,12 +133,16 @@ function Register() {
             }
 
 
-            // -----------------------------------------
-            // NAME
-            // -----------------------------------------
+            // =================================================
+            // NAME VALIDATION
+            // =================================================
+
+            const cleanName =
+                name.trim();
+
 
             if (
-                name.trim().length < 2
+                cleanName.length < 2
             ) {
 
                 setError(
@@ -210,9 +154,28 @@ function Register() {
             }
 
 
-            // -----------------------------------------
-            // EMAIL
-            // -----------------------------------------
+            if (
+                cleanName.length > 100
+            ) {
+
+                setError(
+                    "Name cannot exceed 100 characters."
+                );
+
+                return;
+
+            }
+
+
+            // =================================================
+            // EMAIL VALIDATION
+            // =================================================
+
+            const normalizedEmail =
+                email
+                    .trim()
+                    .toLowerCase();
+
 
             const emailPattern =
                 /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -220,7 +183,7 @@ function Register() {
 
             if (
                 !emailPattern.test(
-                    email.trim()
+                    normalizedEmail
                 )
             ) {
 
@@ -233,9 +196,9 @@ function Register() {
             }
 
 
-            // -----------------------------------------
-            // PASSWORD
-            // -----------------------------------------
+            // =================================================
+            // PASSWORD VALIDATION
+            // =================================================
 
             if (
                 !passwordRules.length ||
@@ -253,9 +216,9 @@ function Register() {
             }
 
 
-            // -----------------------------------------
+            // =================================================
             // CONFIRM PASSWORD
-            // -----------------------------------------
+            // =================================================
 
             if (
                 password !==
@@ -271,20 +234,14 @@ function Register() {
             }
 
 
+            // =================================================
+            // REGISTER REQUEST
+            // =================================================
+
             try {
 
                 setLoading(true);
 
-
-                const normalizedEmail =
-                    email
-                        .trim()
-                        .toLowerCase();
-
-
-                // -------------------------------------
-                // SEND REGISTRATION OTP
-                // -------------------------------------
 
                 const response =
                     await api.post(
@@ -293,41 +250,65 @@ function Register() {
 
                         {
                             name:
-                                name.trim(),
+                                cleanName,
 
                             email:
                                 normalizedEmail,
 
-                            password
+                            password,
+
+                            secretKey:
+                                secretKey.trim()
+
                         }
 
                     );
 
 
+                // =================================================
+                // SUCCESS
+                // =================================================
+
                 if (
                     response.data.success
                 ) {
 
-                    setEmail(
-                        normalizedEmail
-                    );
-
-
-                    setStep(2);
-
-
                     setSuccess(
-                        "Verification OTP has been sent to your email."
+                        "Account created successfully! Redirecting to login..."
                     );
 
 
-                    startResendTimer();
+                    // Clear sensitive fields
+
+                    setPassword("");
+
+                    setConfirmPassword("");
+
+                    setSecretKey("");
+
+
+                    // Redirect to login
+
+                    setTimeout(() => {
+
+                        navigate(
+                            "/login",
+                            {
+                                replace: true
+                            }
+                        );
+
+                    }, 1000);
+
 
                 } else {
 
                     setError(
+
                         response.data.message ||
-                        "Unable to send verification OTP."
+
+                        "Unable to create account."
+
                     );
 
                 }
@@ -345,7 +326,7 @@ function Register() {
 
                     error.response?.data?.message ||
 
-                    "Unable to create registration request. Please try again."
+                    "Unable to create account. Please try again."
 
                 );
 
@@ -356,228 +337,6 @@ function Register() {
             }
 
         };
-
-
-    // =================================================
-    // VERIFY REGISTRATION OTP
-    // =================================================
-
-    const handleVerifyOTP =
-        async (event) => {
-
-            event.preventDefault();
-
-
-            setError("");
-
-            setSuccess("");
-
-
-            // -----------------------------------------
-            // OTP VALIDATION
-            // -----------------------------------------
-
-            if (
-                !/^\d{6}$/.test(
-                    otp
-                )
-            ) {
-
-                setError(
-                    "Please enter a valid 6 digit OTP."
-                );
-
-                return;
-
-            }
-
-
-            try {
-
-                setLoading(true);
-
-
-                const response =
-                    await api.post(
-
-                        "/auth/verify-registration-otp",
-
-                        {
-                            email:
-                                email
-                                    .trim()
-                                    .toLowerCase(),
-
-                            otp
-                        }
-
-                    );
-
-
-                if (
-                    response.data.success
-                ) {
-
-                    setSuccess(
-                        "Email verified successfully. Redirecting to login..."
-                    );
-
-
-                    setSuccess(
-                        "Email verified successfully. Welcome to Our Memo!"
-                    );
-
-                    setTimeout(() => {
-
-                        navigate("/", {
-                            replace: true
-                        });
-
-                    }, 800);
-
-                } else {
-
-                    setError(
-                        response.data.message ||
-                        "OTP verification failed."
-                    );
-
-                }
-
-
-            } catch (error) {
-
-                console.error(
-                    "VERIFY REGISTRATION OTP ERROR:",
-                    error
-                );
-
-
-                setError(
-
-                    error.response?.data?.message ||
-
-                    "Unable to verify OTP. Please try again."
-
-                );
-
-            } finally {
-
-                setLoading(false);
-
-            }
-
-        };
-
-
-    // =================================================
-    // RESEND REGISTRATION OTP
-    // =================================================
-
-    const handleResendOTP =
-        async () => {
-
-            if (
-                resendTimer > 0 ||
-                resendLoading
-            ) {
-
-                return;
-
-            }
-
-
-            setError("");
-
-            setSuccess("");
-
-
-            try {
-
-                setResendLoading(true);
-
-
-                const response =
-                    await api.post(
-
-                        "/auth/resend-registration-otp",
-
-                        {
-                            email:
-                                email
-                                    .trim()
-                                    .toLowerCase()
-                        }
-
-                    );
-
-
-                if (
-                    response.data.success
-                ) {
-
-                    setSuccess(
-                        "A new OTP has been sent to your email."
-                    );
-
-
-                    setOtp("");
-
-
-                    startResendTimer();
-
-                } else {
-
-                    setError(
-                        response.data.message ||
-                        "Unable to resend OTP."
-                    );
-
-                }
-
-
-            } catch (error) {
-
-                console.error(
-                    "RESEND REGISTRATION OTP ERROR:",
-                    error
-                );
-
-
-                setError(
-
-                    error.response?.data?.message ||
-
-                    "Unable to resend OTP."
-
-                );
-
-            } finally {
-
-                setResendLoading(false);
-
-            }
-
-        };
-
-
-    // =================================================
-    // CHANGE EMAIL
-    // =================================================
-
-    const handleChangeEmail = () => {
-
-        setStep(1);
-
-        setOtp("");
-
-        setError("");
-
-        setSuccess("");
-
-        setResendTimer(0);
-
-    };
 
 
     // =================================================
@@ -591,9 +350,9 @@ function Register() {
             <div className="register-card">
 
 
-                {/* =====================================
+                {/* =================================================
                     LOGO
-                ===================================== */}
+                ================================================= */}
 
                 <div className="register-logo">
 
@@ -614,645 +373,501 @@ function Register() {
                 </div>
 
 
-                {/* =====================================
-                    STEP 1
-                ===================================== */}
+                {/* =================================================
+                    HEADER
+                ================================================= */}
 
-                {step === 1 && (
+                <div className="register-header">
 
-                    <>
-
-                        <div className="register-header">
-
-                            <h1>
-                                Create your account
-                            </h1>
+                    <h1>
+                        Create your account
+                    </h1>
 
 
-                            <p>
-                                Start saving your memories
-                                in one place.
-                            </p>
+                    <p>
+                        Start saving your memories
+                        in one place.
+                    </p>
+
+                </div>
+
+
+                {/* =================================================
+                    ERROR
+                ================================================= */}
+
+                {error && (
+
+                    <div className="register-error">
+
+                        {error}
+
+                    </div>
+
+                )}
+
+
+                {/* =================================================
+                    SUCCESS
+                ================================================= */}
+
+                {success && (
+
+                    <div className="register-success">
+
+                        <CheckCircle
+                            size={17}
+                        />
+
+                        {success}
+
+                    </div>
+
+                )}
+
+
+                {/* =================================================
+                    FORM
+                ================================================= */}
+
+                <form
+                    className="register-form"
+                    onSubmit={
+                        handleRegister
+                    }
+                >
+
+
+                    {/* =================================================
+                        NAME
+                    ================================================= */}
+
+                    <div className="register-field">
+
+                        <label>
+                            Full Name
+                        </label>
+
+
+                        <div className="register-input-wrapper">
+
+                            <User
+                                size={17}
+                            />
+
+
+                            <input
+                                type="text"
+                                placeholder="Enter your name"
+                                value={
+                                    name
+                                }
+                                onChange={
+                                    event =>
+                                        setName(
+                                            event.target.value
+                                        )
+                                }
+                                maxLength={100}
+                                autoComplete="name"
+                                disabled={
+                                    loading
+                                }
+                            />
 
                         </div>
 
+                    </div>
 
-                        {/* ERROR */}
 
-                        {error && (
+                    {/* =================================================
+                        EMAIL
+                    ================================================= */}
 
-                            <div className="register-error">
+                    <div className="register-field">
 
-                                {error}
+                        <label>
+                            Email Address
+                        </label>
 
-                            </div>
 
-                        )}
+                        <div className="register-input-wrapper">
 
+                            <Mail
+                                size={17}
+                            />
 
-                        {/* SUCCESS */}
 
-                        {success && (
+                            <input
+                                type="email"
+                                placeholder="Enter your email"
+                                value={
+                                    email
+                                }
+                                onChange={
+                                    event =>
+                                        setEmail(
+                                            event.target.value
+                                        )
+                                }
+                                autoComplete="email"
+                                disabled={
+                                    loading
+                                }
+                            />
 
-                            <div className="register-success">
+                        </div>
 
-                                <CheckCircle
-                                    size={17}
-                                />
+                    </div>
 
-                                {success}
 
-                            </div>
+                    {/* =================================================
+                        PASSWORD
+                    ================================================= */}
 
-                        )}
+                    <div className="register-field">
 
+                        <label>
+                            Password
+                        </label>
 
-                        {/* FORM */}
 
-                        <form
-                            className="register-form"
-                            onSubmit={
-                                handleRegister
-                            }
-                        >
+                        <div className="register-input-wrapper">
 
+                            <Lock
+                                size={17}
+                            />
 
-                            {/* NAME */}
 
-                            <div className="register-field">
+                            <input
+                                type={
+                                    showPassword
+                                        ? "text"
+                                        : "password"
+                                }
+                                placeholder="Create a password"
+                                value={
+                                    password
+                                }
+                                onChange={
+                                    event =>
+                                        setPassword(
+                                            event.target.value
+                                        )
+                                }
+                                autoComplete="new-password"
+                                disabled={
+                                    loading
+                                }
+                            />
 
-                                <label>
-                                    Full Name
-                                </label>
-
-
-                                <div className="register-input-wrapper">
-
-                                    <User
-                                        size={17}
-                                    />
-
-
-                                    <input
-                                        type="text"
-                                        placeholder="Enter your name"
-                                        value={
-                                            name
-                                        }
-                                        onChange={
-                                            event =>
-                                                setName(
-                                                    event.target.value
-                                                )
-                                        }
-                                        maxLength={100}
-                                        autoComplete="name"
-                                        disabled={
-                                            loading
-                                        }
-                                    />
-
-                                </div>
-
-                            </div>
-
-
-                            {/* EMAIL */}
-
-                            <div className="register-field">
-
-                                <label>
-                                    Email Address
-                                </label>
-
-
-                                <div className="register-input-wrapper">
-
-                                    <Mail
-                                        size={17}
-                                    />
-
-
-                                    <input
-                                        type="email"
-                                        placeholder="Enter your email"
-                                        value={
-                                            email
-                                        }
-                                        onChange={
-                                            event =>
-                                                setEmail(
-                                                    event.target.value
-                                                )
-                                        }
-                                        autoComplete="email"
-                                        disabled={
-                                            loading
-                                        }
-                                    />
-
-                                </div>
-
-                            </div>
-
-
-                            {/* PASSWORD */}
-
-                            <div className="register-field">
-
-                                <label>
-                                    Password
-                                </label>
-
-
-                                <div className="register-input-wrapper">
-
-                                    <Lock
-                                        size={17}
-                                    />
-
-
-                                    <input
-                                        type={
-                                            showPassword
-                                                ? "text"
-                                                : "password"
-                                        }
-                                        placeholder="Create a password"
-                                        value={
-                                            password
-                                        }
-                                        onChange={
-                                            event =>
-                                                setPassword(
-                                                    event.target.value
-                                                )
-                                        }
-                                        autoComplete="new-password"
-                                        disabled={
-                                            loading
-                                        }
-                                    />
-
-
-                                    <button
-                                        type="button"
-                                        className="register-eye-button"
-                                        onClick={() =>
-                                            setShowPassword(
-                                                current =>
-                                                    !current
-                                            )
-                                        }
-                                        disabled={
-                                            loading
-                                        }
-                                    >
-
-                                        {showPassword ? (
-
-                                            <EyeOff
-                                                size={17}
-                                            />
-
-                                        ) : (
-
-                                            <Eye
-                                                size={17}
-                                            />
-
-                                        )}
-
-                                    </button>
-
-                                </div>
-
-                            </div>
-
-
-                            {/* PASSWORD RULES */}
-
-                            {password && (
-
-                                <div className="register-password-rules">
-
-                                    <PasswordRule
-                                        valid={
-                                            passwordRules.length
-                                        }
-                                        text="At least 8 characters"
-                                    />
-
-
-                                    <PasswordRule
-                                        valid={
-                                            passwordRules.uppercase
-                                        }
-                                        text="One uppercase letter"
-                                    />
-
-
-                                    <PasswordRule
-                                        valid={
-                                            passwordRules.lowercase
-                                        }
-                                        text="One lowercase letter"
-                                    />
-
-
-                                    <PasswordRule
-                                        valid={
-                                            passwordRules.number
-                                        }
-                                        text="One number"
-                                    />
-
-                                </div>
-
-                            )}
-
-
-                            {/* CONFIRM PASSWORD */}
-
-                            <div className="register-field">
-
-                                <label>
-                                    Confirm Password
-                                </label>
-
-
-                                <div className="register-input-wrapper">
-
-                                    <Lock
-                                        size={17}
-                                    />
-
-
-                                    <input
-                                        type={
-                                            showConfirmPassword
-                                                ? "text"
-                                                : "password"
-                                        }
-                                        placeholder="Confirm your password"
-                                        value={
-                                            confirmPassword
-                                        }
-                                        onChange={
-                                            event =>
-                                                setConfirmPassword(
-                                                    event.target.value
-                                                )
-                                        }
-                                        autoComplete="new-password"
-                                        disabled={
-                                            loading
-                                        }
-                                    />
-
-
-                                    <button
-                                        type="button"
-                                        className="register-eye-button"
-                                        onClick={() =>
-                                            setShowConfirmPassword(
-                                                current =>
-                                                    !current
-                                            )
-                                        }
-                                        disabled={
-                                            loading
-                                        }
-                                    >
-
-                                        {showConfirmPassword ? (
-
-                                            <EyeOff
-                                                size={17}
-                                            />
-
-                                        ) : (
-
-                                            <Eye
-                                                size={17}
-                                            />
-
-                                        )}
-
-                                    </button>
-
-                                </div>
-
-                            </div>
-
-
-                            {/* PASSWORD MATCH */}
-
-                            {confirmPassword && (
-
-                                <div
-                                    className={
-                                        password ===
-                                        confirmPassword
-                                            ? "register-match success"
-                                            : "register-match"
-                                    }
-                                >
-
-                                    {password ===
-                                    confirmPassword
-
-                                        ? "Passwords match"
-
-                                        : "Passwords do not match"
-
-                                    }
-
-                                </div>
-
-                            )}
-
-
-                            {/* SUBMIT */}
 
                             <button
-                                type="submit"
-                                className="register-submit"
+                                type="button"
+                                className="register-eye-button"
+                                onClick={() =>
+                                    setShowPassword(
+                                        current =>
+                                            !current
+                                    )
+                                }
                                 disabled={
                                     loading
                                 }
                             >
 
-                                <UserPlus
-                                    size={17}
-                                />
+                                {showPassword ? (
 
-
-                                {loading
-
-                                    ? "Sending OTP..."
-
-                                    : "Continue"
-
-                                }
-
-                            </button>
-
-                        </form>
-
-
-                        {/* LOGIN */}
-
-                        <div className="register-login">
-
-                            Already have an account?
-
-                            <Link
-                                to="/login"
-                            >
-                                Login
-                            </Link>
-
-                        </div>
-
-                    </>
-
-                )}
-
-
-                {/* =====================================
-                    STEP 2 — OTP
-                ===================================== */}
-
-                {step === 2 && (
-
-                    <>
-
-                        <button
-                            type="button"
-                            className="register-otp-back"
-                            onClick={
-                                handleChangeEmail
-                            }
-                        >
-
-                            <ArrowLeft
-                                size={16}
-                            />
-
-                            Back
-
-                        </button>
-
-
-                        <div className="register-header">
-
-                            <div className="register-otp-icon">
-
-                                <ShieldCheck
-                                    size={25}
-                                />
-
-                            </div>
-
-
-                            <h1>
-                                Verify your email
-                            </h1>
-
-
-                            <p>
-
-                                We sent a 6 digit
-                                verification code to
-
-                                <br />
-
-                                <strong>
-                                    {email}
-                                </strong>
-
-                            </p>
-
-                        </div>
-
-
-                        {/* ERROR */}
-
-                        {error && (
-
-                            <div className="register-error">
-
-                                {error}
-
-                            </div>
-
-                        )}
-
-
-                        {/* SUCCESS */}
-
-                        {success && (
-
-                            <div className="register-success">
-
-                                <CheckCircle
-                                    size={17}
-                                />
-
-                                {success}
-
-                            </div>
-
-                        )}
-
-
-                        {/* OTP FORM */}
-
-                        <form
-                            className="register-form"
-                            onSubmit={
-                                handleVerifyOTP
-                            }
-                        >
-
-                            <div className="register-field">
-
-                                <label>
-                                    Verification Code
-                                </label>
-
-
-                                <div className="register-input-wrapper">
-
-                                    <ShieldCheck
+                                    <EyeOff
                                         size={17}
                                     />
 
+                                ) : (
 
-                                    <input
-                                        type="text"
-                                        inputMode="numeric"
-                                        maxLength={6}
-                                        placeholder="000000"
-                                        value={
-                                            otp
-                                        }
-                                        onChange={
-                                            event =>
-                                                setOtp(
-                                                    event.target.value.replace(
-                                                        /\D/g,
-                                                        ""
-                                                    )
-                                                )
-                                        }
-                                        autoComplete="one-time-code"
-                                        disabled={
-                                            loading
-                                        }
+                                    <Eye
+                                        size={17}
                                     />
 
-                                </div>
-
-                            </div>
-
-
-                            <button
-                                type="submit"
-                                className="register-submit"
-                                disabled={
-                                    loading ||
-                                    otp.length !== 6
-                                }
-                            >
-
-                                <ShieldCheck
-                                    size={17}
-                                />
-
-
-                                {loading
-
-                                    ? "Verifying..."
-
-                                    : "Verify Email"
-
-                                }
+                                )}
 
                             </button>
 
-                        </form>
+                        </div>
+
+                    </div>
 
 
-                        {/* RESEND */}
+                    {/* =================================================
+                        PASSWORD RULES
+                    ================================================= */}
 
-                        <div className="register-resend">
+                    {password && (
 
-                            {resendTimer > 0 ? (
+                        <div className="register-password-rules">
 
-                                <span>
-                                    Resend OTP in{" "}
-                                    <strong>
-                                        {resendTimer}s
-                                    </strong>
-                                </span>
+                            <PasswordRule
+                                valid={
+                                    passwordRules.length
+                                }
+                                text="At least 8 characters"
+                            />
 
-                            ) : (
 
-                                <button
-                                    type="button"
-                                    onClick={
-                                        handleResendOTP
-                                    }
-                                    disabled={
-                                        resendLoading
-                                    }
-                                >
+                            <PasswordRule
+                                valid={
+                                    passwordRules.uppercase
+                                }
+                                text="One uppercase letter"
+                            />
 
-                                    {resendLoading
 
-                                        ? "Sending..."
+                            <PasswordRule
+                                valid={
+                                    passwordRules.lowercase
+                                }
+                                text="One lowercase letter"
+                            />
 
-                                        : "Resend OTP"
 
-                                    }
-
-                                </button>
-
-                            )}
+                            <PasswordRule
+                                valid={
+                                    passwordRules.number
+                                }
+                                text="One number"
+                            />
 
                         </div>
 
+                    )}
 
-                        {/* CHANGE EMAIL */}
 
-                        <button
-                            type="button"
-                            className="register-change-email"
-                            onClick={
-                                handleChangeEmail
+                    {/* =================================================
+                        CONFIRM PASSWORD
+                    ================================================= */}
+
+                    <div className="register-field">
+
+                        <label>
+                            Confirm Password
+                        </label>
+
+
+                        <div className="register-input-wrapper">
+
+                            <Lock
+                                size={17}
+                            />
+
+
+                            <input
+                                type={
+                                    showConfirmPassword
+                                        ? "text"
+                                        : "password"
+                                }
+                                placeholder="Confirm your password"
+                                value={
+                                    confirmPassword
+                                }
+                                onChange={
+                                    event =>
+                                        setConfirmPassword(
+                                            event.target.value
+                                        )
+                                }
+                                autoComplete="new-password"
+                                disabled={
+                                    loading
+                                }
+                            />
+
+
+                            <button
+                                type="button"
+                                className="register-eye-button"
+                                onClick={() =>
+                                    setShowConfirmPassword(
+                                        current =>
+                                            !current
+                                    )
+                                }
+                                disabled={
+                                    loading
+                                }
+                            >
+
+                                {showConfirmPassword ? (
+
+                                    <EyeOff
+                                        size={17}
+                                    />
+
+                                ) : (
+
+                                    <Eye
+                                        size={17}
+                                    />
+
+                                )}
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    {/* =================================================
+                        PASSWORD MATCH
+                    ================================================= */}
+
+                    {confirmPassword && (
+
+                        <div
+                            className={
+                                password ===
+                                confirmPassword
+                                    ? "register-match success"
+                                    : "register-match"
                             }
                         >
-                            Use a different email
-                        </button>
 
+                            {password ===
+                            confirmPassword
 
-                        <div className="register-login">
+                                ? "Passwords match"
 
-                            Already have an account?
+                                : "Passwords do not match"
 
-                            <Link
-                                to="/login"
-                            >
-                                Login
-                            </Link>
+                            }
 
                         </div>
 
-                    </>
+                    )}
 
-                )}
+
+                    {/* =================================================
+                        SECRET KEY
+                    ================================================= */}
+
+                    <div className="register-field">
+
+                        <label>
+                            Secret Key
+                        </label>
+
+
+                        <div className="register-input-wrapper">
+
+                            <KeyRound
+                                size={17}
+                            />
+
+
+                            <input
+                                type={
+                                    showSecretKey
+                                        ? "text"
+                                        : "password"
+                                }
+                                placeholder="Enter secret key"
+                                value={
+                                    secretKey
+                                }
+                                onChange={
+                                    event =>
+                                        setSecretKey(
+                                            event.target.value
+                                        )
+                                }
+                                autoComplete="off"
+                                disabled={
+                                    loading
+                                }
+                            />
+
+
+                            <button
+                                type="button"
+                                className="register-eye-button"
+                                onClick={() =>
+                                    setShowSecretKey(
+                                        current =>
+                                            !current
+                                    )
+                                }
+                                disabled={
+                                    loading
+                                }
+                            >
+
+                                {showSecretKey ? (
+
+                                    <EyeOff
+                                        size={17}
+                                    />
+
+                                ) : (
+
+                                    <Eye
+                                        size={17}
+                                    />
+
+                                )}
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    {/* =================================================
+                        SUBMIT
+                    ================================================= */}
+
+                    <button
+                        type="submit"
+                        className="register-submit"
+                        disabled={
+                            loading
+                        }
+                    >
+
+                        <UserPlus
+                            size={17}
+                        />
+
+
+                        {loading
+
+                            ? "Creating account..."
+
+                            : "Create account"
+
+                        }
+
+                    </button>
+
+                </form>
+
+
+                {/* =================================================
+                    LOGIN
+                ================================================= */}
+
+                <div className="register-login">
+
+                    Already have an account?
+
+                    <Link
+                        to="/login"
+                    >
+                        Login
+                    </Link>
+
+                </div>
+
 
             </div>
 

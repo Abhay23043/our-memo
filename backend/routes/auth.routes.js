@@ -2,8 +2,6 @@ import express from "express";
 
 import {
     registerUser,
-    verifyRegistrationOTP,
-    resendRegistrationOTP,
 
     loginUser,
     logoutUser,
@@ -15,47 +13,32 @@ import {
     forgotPassword,
     verifyResetOTP,
     resetPassword
+
 } from "../controllers/auth.controller.js";
+
 
 import {
     requireAuth
 } from "../middleware/auth.middleware.js";
+
 
 import {
     loginLimiter
 } from "../middleware/rateLimit.middleware.js";
 
 
-const router = express.Router();
+const router =
+    express.Router();
 
 
 // =====================================================
 // REGISTER
+// SECRET KEY PROTECTED
 // =====================================================
 
 router.post(
     "/register",
     registerUser
-);
-
-
-// =====================================================
-// VERIFY REGISTRATION OTP
-// =====================================================
-
-router.post(
-    "/verify-registration-otp",
-    verifyRegistrationOTP
-);
-
-
-// =====================================================
-// RESEND REGISTRATION OTP
-// =====================================================
-
-router.post(
-    "/resend-registration-otp",
-    resendRegistrationOTP
 );
 
 
@@ -143,5 +126,9 @@ router.post(
     resetPassword
 );
 
+
+// =====================================================
+// EXPORT
+// =====================================================
 
 export default router;
