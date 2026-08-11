@@ -313,6 +313,39 @@ export const registerUser = async (
 
 
         // =================================================
+        // IMPORTANT
+        // SAVE SESSION BEFORE RESPONSE
+        // =================================================
+
+        await new Promise(
+            (
+                resolve,
+                reject
+            ) => {
+
+                req.session.save(
+                    (error) => {
+
+                        if (error) {
+
+                            reject(
+                                error
+                            );
+
+                        } else {
+
+                            resolve();
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+
+        // =================================================
         // SUCCESS
         // =================================================
 
@@ -476,6 +509,39 @@ export const loginUser = async (
 
 
         // =================================================
+        // IMPORTANT
+        // EXPLICITLY SAVE SESSION
+        // =================================================
+
+        await new Promise(
+            (
+                resolve,
+                reject
+            ) => {
+
+                req.session.save(
+                    (error) => {
+
+                        if (error) {
+
+                            reject(
+                                error
+                            );
+
+                        } else {
+
+                            resolve();
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+
+        // =================================================
         // SUCCESS
         // =================================================
 
@@ -541,6 +607,12 @@ export const logoutUser = (
 
             if (error) {
 
+                console.error(
+                    "LOGOUT ERROR:",
+                    error
+                );
+
+
                 return res.status(500).json({
 
                     success: false,
@@ -553,12 +625,32 @@ export const logoutUser = (
             }
 
 
+            // =================================================
+            // CLEAR SESSION COOKIE
+            // =================================================
+
             res.clearCookie(
-                "connect.sid"
+                "connect.sid",
+                {
+
+                    httpOnly:
+                        true,
+
+                    secure:
+                        process.env.NODE_ENV ===
+                        "production",
+
+                    sameSite:
+                        process.env.NODE_ENV ===
+                        "production"
+                            ? "none"
+                            : "lax"
+
+                }
             );
 
 
-            return res.json({
+            return res.status(200).json({
 
                 success: true,
 
@@ -575,6 +667,16 @@ export const logoutUser = (
 
 // =====================================================
 // CURRENT USER
+//
+// IMPORTANT:
+// ALWAYS FETCH FROM DATABASE
+//
+// This means if you manually change:
+// role: "user"
+// to:
+// role: "admin"
+//
+// the new role will be returned after refresh.
 // =====================================================
 
 export const getCurrentUser =
@@ -584,6 +686,10 @@ export const getCurrentUser =
     ) => {
 
         try {
+
+            // =================================================
+            // CHECK SESSION
+            // =================================================
 
             if (
                 !req.session.userId
@@ -601,6 +707,10 @@ export const getCurrentUser =
             }
 
 
+            // =================================================
+            // FETCH FRESH USER FROM DATABASE
+            // =================================================
+
             const user =
                 await User.findById(
 
@@ -611,7 +721,16 @@ export const getCurrentUser =
                 );
 
 
+            // =================================================
+            // USER NOT FOUND
+            // =================================================
+
             if (!user) {
+
+                req.session.destroy(
+                    () => {}
+                );
+
 
                 return res.status(401).json({
 
@@ -624,6 +743,10 @@ export const getCurrentUser =
 
             }
 
+
+            // =================================================
+            // RETURN CURRENT DATABASE ROLE
+            // =================================================
 
             return res.status(200).json({
 
@@ -682,6 +805,10 @@ export const updateProfile =
     ) => {
 
         try {
+
+            // =================================================
+            // CHECK AUTHENTICATION
+            // =================================================
 
             if (
                 !req.session.userId
@@ -860,6 +987,10 @@ export const changePassword =
     ) => {
 
         try {
+
+            // =================================================
+            // CHECK AUTHENTICATION
+            // =================================================
 
             if (
                 !req.session.userId

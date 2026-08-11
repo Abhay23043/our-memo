@@ -2,8 +2,14 @@ import {
     BrowserRouter,
     Routes,
     Route,
-    useLocation
+    useLocation,
+    Navigate
 } from "react-router-dom";
+
+
+import {
+    useEffect
+} from "react";
 
 
 import LandingPage
@@ -58,6 +64,89 @@ import ProtectedRoute
 from "./components/ProtectedRoute.jsx";
 
 
+import {
+    useAuth
+} from "./context/AuthContext.jsx";
+
+
+// =====================================================
+// ROLE REDIRECT
+//
+// This component checks the CURRENT role obtained
+// from /auth/me.
+//
+// IMPORTANT:
+// If MongoDB role changes from user → admin,
+// refreshing the browser will detect the new role.
+// =====================================================
+
+function RoleRedirect() {
+
+    const {
+        user,
+        loading
+    } = useAuth();
+
+
+    // =================================================
+    // WAIT FOR AUTH CHECK
+    // =================================================
+
+    if (loading) {
+
+        return (
+
+            <div className="auth-loading">
+
+                <div className="loading-spinner"></div>
+
+                <p>
+                    Loading...
+                </p>
+
+            </div>
+
+        );
+
+    }
+
+
+    // =================================================
+    // ADMIN
+    //
+    // Admin visiting "/" goes to dashboard.
+    // =================================================
+
+    if (
+        user &&
+        user.role === "admin"
+    ) {
+
+        return (
+
+            <Navigate
+                to="/dashboard"
+                replace
+            />
+
+        );
+
+    }
+
+
+    // =================================================
+    // NORMAL USER / LOGGED OUT
+    //
+    // Stay on landing page.
+    // =================================================
+
+    return (
+        <LandingPage />
+    );
+
+}
+
+
 // =====================================================
 // APP LAYOUT
 // =====================================================
@@ -68,11 +157,16 @@ function AppLayout() {
         useLocation();
 
 
+    const {
+        user,
+        loading
+    } = useAuth();
+
+
     // =================================================
     // LANDING PAGE
     //
-    // LandingPage already has its own navbar.
-    // Therefore global Navbar should NOT appear here.
+    // LandingPage has its own navbar.
     // =================================================
 
     const isLandingPage =
@@ -81,8 +175,6 @@ function AppLayout() {
 
     // =================================================
     // AUTH PAGES
-    //
-    // Navbar hidden on login/register/forgot-password.
     // =================================================
 
     const isAuthPage =
@@ -95,15 +187,71 @@ function AppLayout() {
     // HIDE GLOBAL NAVBAR
     //
     // Landing page:
-    //     has its own navbar
+    //     own navbar
     //
     // Auth pages:
-    //     should have no navbar
+    //     no navbar
     // =================================================
 
     const hideNavbar =
         isLandingPage ||
         isAuthPage;
+
+
+    // =================================================
+    // AUTOMATIC ADMIN REDIRECT
+    //
+    // This handles:
+    //
+    // MongoDB:
+    // role = user
+    //
+    // change to:
+    // role = admin
+    //
+    // then browser refresh:
+    // "/" → "/dashboard"
+    // =================================================
+
+    useEffect(() => {
+
+        if (
+            loading
+        ) {
+
+            return;
+
+        }
+
+
+        // =================================================
+        // ONLY REDIRECT FROM LANDING PAGE
+        // =================================================
+
+        if (
+            location.pathname === "/" &&
+            user?.role === "admin"
+        ) {
+
+            window.history.replaceState(
+                null,
+                "",
+                "/dashboard"
+            );
+
+            window.dispatchEvent(
+                new PopStateEvent(
+                    "popstate"
+                )
+            );
+
+        }
+
+    }, [
+        user,
+        loading,
+        location.pathname
+    ]);
 
 
     return (
@@ -113,7 +261,8 @@ function AppLayout() {
 
             {/* =================================================
                 GLOBAL NAVBAR
-                ADMIN PRIVATE PAGES ONLY
+
+                Only authenticated/private pages.
             ================================================= */}
 
             {!hideNavbar && (
@@ -132,12 +281,18 @@ function AppLayout() {
 
                 {/* =================================================
                     PUBLIC LANDING PAGE
+
+                    IMPORTANT:
+                    RoleRedirect decides:
+
+                    Normal user → Landing Page
+                    Admin       → Dashboard
                 ================================================= */}
 
                 <Route
                     path="/"
                     element={
-                        <LandingPage />
+                        <RoleRedirect />
                     }
                 />
 
@@ -180,8 +335,6 @@ function AppLayout() {
 
                 {/* =================================================
                     ADMIN ONLY ROUTES
-                    EVERYTHING INSIDE THIS ROUTE
-                    REQUIRES ADMIN
                 ================================================= */}
 
                 <Route
@@ -296,13 +449,15 @@ function AppLayout() {
 
                 {/* =================================================
                     UNKNOWN ROUTES
-                    SEND USER TO LANDING PAGE
                 ================================================= */}
 
                 <Route
                     path="*"
                     element={
-                        <LandingPage />
+                        <Navigate
+                            to="/"
+                            replace
+                        />
                     }
                 />
 
