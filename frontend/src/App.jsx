@@ -6,6 +6,10 @@ import {
 } from "react-router-dom";
 
 
+import LandingPage
+from "./pages/LandingPage.jsx";
+
+
 import Dashboard
 from "./pages/Dashboard.jsx";
 
@@ -42,6 +46,10 @@ import Profile
 from "./pages/Profile.jsx";
 
 
+import ForgotPassword
+from "./pages/ForgotPassword";
+
+
 import Navbar
 from "./components/Navbar.jsx";
 
@@ -50,9 +58,9 @@ import ProtectedRoute
 from "./components/ProtectedRoute.jsx";
 
 
-import ForgotPassword
-from "./pages/ForgotPassword";
-
+// =====================================================
+// APP LAYOUT
+// =====================================================
 
 function AppLayout() {
 
@@ -61,7 +69,20 @@ function AppLayout() {
 
 
     // =================================================
-    // PUBLIC AUTH PAGES
+    // LANDING PAGE
+    //
+    // LandingPage already has its own navbar.
+    // Therefore global Navbar should NOT appear here.
+    // =================================================
+
+    const isLandingPage =
+        location.pathname === "/";
+
+
+    // =================================================
+    // AUTH PAGES
+    //
+    // Navbar hidden on login/register/forgot-password.
     // =================================================
 
     const isAuthPage =
@@ -70,15 +91,32 @@ function AppLayout() {
         location.pathname === "/forgot-password";
 
 
+    // =================================================
+    // HIDE GLOBAL NAVBAR
+    //
+    // Landing page:
+    //     has its own navbar
+    //
+    // Auth pages:
+    //     should have no navbar
+    // =================================================
+
+    const hideNavbar =
+        isLandingPage ||
+        isAuthPage;
+
+
     return (
 
         <>
 
+
             {/* =================================================
-                NAVBAR
+                GLOBAL NAVBAR
+                ADMIN PRIVATE PAGES ONLY
             ================================================= */}
 
-            {!isAuthPage && (
+            {!hideNavbar && (
 
                 <Navbar />
 
@@ -93,7 +131,19 @@ function AppLayout() {
 
 
                 {/* =================================================
-                    PUBLIC ROUTES
+                    PUBLIC LANDING PAGE
+                ================================================= */}
+
+                <Route
+                    path="/"
+                    element={
+                        <LandingPage />
+                    }
+                />
+
+
+                {/* =================================================
+                    LOGIN
                 ================================================= */}
 
                 <Route
@@ -104,13 +154,9 @@ function AppLayout() {
                 />
 
 
-                <Route
-                    path="/forgot-password"
-                    element={
-                        <ForgotPassword />
-                    }
-                />
-
+                {/* =================================================
+                    REGISTER
+                ================================================= */}
 
                 <Route
                     path="/register"
@@ -121,58 +167,21 @@ function AppLayout() {
 
 
                 {/* =================================================
-                    NORMAL AUTHENTICATED ROUTES
+                    FORGOT PASSWORD
                 ================================================= */}
 
                 <Route
+                    path="/forgot-password"
                     element={
-                        <ProtectedRoute />
+                        <ForgotPassword />
                     }
-                >
-
-
-                    {/* =================================================
-                        DASHBOARD
-                    ================================================= */}
-
-                    <Route
-                        path="/"
-                        element={
-                            <Dashboard />
-                        }
-                    />
-
-
-                    {/* =================================================
-                        FOLDERS
-                        Normal users can see folder list
-                    ================================================= */}
-
-                    <Route
-                        path="/folders"
-                        element={
-                            <Folders />
-                        }
-                    />
-
-
-                    {/* =================================================
-                        PROFILE
-                    ================================================= */}
-
-                    <Route
-                        path="/profile"
-                        element={
-                            <Profile />
-                        }
-                    />
-
-
-                </Route>
+                />
 
 
                 {/* =================================================
                     ADMIN ONLY ROUTES
+                    EVERYTHING INSIDE THIS ROUTE
+                    REQUIRES ADMIN
                 ================================================= */}
 
                 <Route
@@ -182,6 +191,18 @@ function AppLayout() {
                         />
                     }
                 >
+
+
+                    {/* =================================================
+                        DASHBOARD
+                    ================================================= */}
+
+                    <Route
+                        path="/dashboard"
+                        element={
+                            <Dashboard />
+                        }
+                    />
 
 
                     {/* =================================================
@@ -197,13 +218,13 @@ function AppLayout() {
 
 
                     {/* =================================================
-                        FAVORITES
+                        FOLDERS
                     ================================================= */}
 
                     <Route
-                        path="/favorites"
+                        path="/folders"
                         element={
-                            <Favorites />
+                            <Folders />
                         }
                     />
 
@@ -221,6 +242,18 @@ function AppLayout() {
 
 
                     {/* =================================================
+                        FAVORITES
+                    ================================================= */}
+
+                    <Route
+                        path="/favorites"
+                        element={
+                            <Favorites />
+                        }
+                    />
+
+
+                    {/* =================================================
                         RECYCLE BIN
                     ================================================= */}
 
@@ -228,6 +261,18 @@ function AppLayout() {
                         path="/recycle-bin"
                         element={
                             <RecycleBin />
+                        }
+                    />
+
+
+                    {/* =================================================
+                        PROFILE
+                    ================================================= */}
+
+                    <Route
+                        path="/profile"
+                        element={
+                            <Profile />
                         }
                     />
 
@@ -249,7 +294,21 @@ function AppLayout() {
                 </Route>
 
 
+                {/* =================================================
+                    UNKNOWN ROUTES
+                    SEND USER TO LANDING PAGE
+                ================================================= */}
+
+                <Route
+                    path="*"
+                    element={
+                        <LandingPage />
+                    }
+                />
+
+
             </Routes>
+
 
         </>
 
@@ -257,6 +316,10 @@ function AppLayout() {
 
 }
 
+
+// =====================================================
+// APP
+// =====================================================
 
 function App() {
 

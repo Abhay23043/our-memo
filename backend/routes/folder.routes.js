@@ -93,9 +93,7 @@ router.delete(
 // FOLDER DETAILS
 // ADMIN ONLY
 //
-// IMPORTANT:
-// This endpoint can return photos inside the folder.
-// Therefore normal users must not access it.
+// Returns folder information + photos.
 // =====================================================
 
 router.get(
@@ -108,15 +106,16 @@ router.get(
 
 // =====================================================
 // GET ACTIVE FOLDERS
-// AUTHENTICATED USERS
+// ADMIN ONLY
 //
-// Normal users can see folder list.
-// They cannot open folder details/photos.
+// IMPORTANT:
+// Normal users MUST NOT be able to access folders.
 // =====================================================
 
 router.get(
     "/",
     requireAuth,
+    requireAdmin,
     getFolders
 );
 

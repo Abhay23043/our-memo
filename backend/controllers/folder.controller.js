@@ -12,10 +12,46 @@ import {
 
 
 // =====================================================
-// CREATE FOLDER
+// ADMIN ACCESS GUARD
+// Defense-in-depth
 // =====================================================
 
-export const createFolder = async (req, res) => {
+const requireControllerAdmin = (req, res) => {
+
+    if (req.user?.role !== "admin") {
+
+        res.status(403).json({
+
+            success: false,
+
+            message:
+                "Admin access required"
+
+        });
+
+        return false;
+
+    }
+
+    return true;
+
+};
+
+
+// =====================================================
+// CREATE FOLDER
+// ADMIN ONLY
+// =====================================================
+
+export const createFolder = async (
+    req,
+    res
+) => {
+
+    if (!requireControllerAdmin(req, res)) {
+        return;
+    }
+
 
     try {
 
@@ -31,8 +67,12 @@ export const createFolder = async (req, res) => {
         ) {
 
             return res.status(400).json({
+
                 success: false,
-                message: "Folder name is required"
+
+                message:
+                    "Folder name is required"
+
             });
 
         }
@@ -44,9 +84,9 @@ export const createFolder = async (req, res) => {
         let parentFolderId = null;
 
 
-        // ---------------------------------------------
+        // =================================================
         // OPTIONAL PARENT FOLDER
-        // ---------------------------------------------
+        // =================================================
 
         if (parentFolder) {
 
@@ -57,8 +97,12 @@ export const createFolder = async (req, res) => {
             ) {
 
                 return res.status(400).json({
+
                     success: false,
-                    message: "Invalid parent folder ID"
+
+                    message:
+                        "Invalid parent folder ID"
+
                 });
 
             }
@@ -66,16 +110,25 @@ export const createFolder = async (req, res) => {
 
             const parent =
                 await Folder.findOne({
-                    _id: parentFolder,
-                    isDeleted: false
+
+                    _id:
+                        parentFolder,
+
+                    isDeleted:
+                        false
+
                 });
 
 
             if (!parent) {
 
                 return res.status(404).json({
+
                     success: false,
-                    message: "Parent folder not found"
+
+                    message:
+                        "Parent folder not found"
+
                 });
 
             }
@@ -90,25 +143,29 @@ export const createFolder = async (req, res) => {
         }
 
 
-        // ---------------------------------------------
+        // =================================================
         // CREATE GOOGLE DRIVE FOLDER
-        // ---------------------------------------------
+        // =================================================
 
         const driveFolder =
             await createDriveFolder(
+
                 name.trim(),
+
                 parentDriveFolderId
+
             );
 
 
-        // ---------------------------------------------
+        // =================================================
         // CREATE MONGODB FOLDER
-        // ---------------------------------------------
+        // =================================================
 
         const folder =
             await Folder.create({
 
-                name: name.trim(),
+                name:
+                    name.trim(),
 
                 driveFolderId:
                     driveFolder.id,
@@ -116,9 +173,11 @@ export const createFolder = async (req, res) => {
                 parentFolder:
                     parentFolderId,
 
-                isDeleted: false,
+                isDeleted:
+                    false,
 
-                deletedAt: null
+                deletedAt:
+                    null
 
             });
 
@@ -133,6 +192,7 @@ export const createFolder = async (req, res) => {
             folder
 
         });
+
 
     } catch (error) {
 
@@ -161,6 +221,7 @@ export const createFolder = async (req, res) => {
 
 // =====================================================
 // GET ACTIVE FOLDERS
+// ADMIN ONLY
 // =====================================================
 
 export const getFolders = async (
@@ -168,38 +229,53 @@ export const getFolders = async (
     res
 ) => {
 
+    if (!requireControllerAdmin(req, res)) {
+        return;
+    }
+
+
     try {
 
         const folders =
             await Folder.find({
-                isDeleted: false
+
+                isDeleted:
+                    false
+
             })
             .populate(
                 "parentFolder",
                 "name"
             )
             .sort({
-                createdAt: -1
+
+                createdAt:
+                    -1
+
             })
             .lean();
 
 
-        // =============================================
-        // ADD PHOTO COUNT TO EVERY FOLDER
-        // =============================================
+        // =================================================
+        // PHOTO COUNT
+        // =================================================
 
         const foldersWithPhotoCount =
             await Promise.all(
 
                 folders.map(
-                    async (folder) => {
+                    async (
+                        folder
+                    ) => {
 
                         const photoCount =
                             await Photo.countDocuments({
 
-                                folder: folder._id,
+                                folder:
+                                    folder._id,
 
-                                isDeleted: false
+                                isDeleted:
+                                    false
 
                             });
 
@@ -227,6 +303,7 @@ export const getFolders = async (
 
         });
 
+
     } catch (error) {
 
         console.error(
@@ -251,12 +328,18 @@ export const getFolders = async (
 
 // =====================================================
 // GET FOLDER DETAILS
+// ADMIN ONLY
 // =====================================================
 
 export const getFolderDetails = async (
     req,
     res
 ) => {
+
+    if (!requireControllerAdmin(req, res)) {
+        return;
+    }
+
 
     try {
 
@@ -286,9 +369,11 @@ export const getFolderDetails = async (
         const folder =
             await Folder.findOne({
 
-                _id: folderId,
+                _id:
+                    folderId,
 
-                isDeleted: false
+                isDeleted:
+                    false
 
             })
             .populate(
@@ -314,13 +399,18 @@ export const getFolderDetails = async (
         const photos =
             await Photo.find({
 
-                folder: folder._id,
+                folder:
+                    folder._id,
 
-                isDeleted: false
+                isDeleted:
+                    false
 
             })
             .sort({
-                createdAt: -1
+
+                createdAt:
+                    -1
+
             });
 
 
@@ -333,6 +423,7 @@ export const getFolderDetails = async (
             photos
 
         });
+
 
     } catch (error) {
 
@@ -358,6 +449,7 @@ export const getFolderDetails = async (
 
 // =====================================================
 // MOVE PHOTO TO FOLDER
+// ADMIN ONLY
 // =====================================================
 
 export const movePhotoToFolder = async (
@@ -365,11 +457,17 @@ export const movePhotoToFolder = async (
     res
 ) => {
 
+    if (!requireControllerAdmin(req, res)) {
+        return;
+    }
+
+
     try {
 
         const {
             photoId
         } = req.params;
+
 
         const {
             folderId
@@ -416,9 +514,11 @@ export const movePhotoToFolder = async (
         const photo =
             await Photo.findOne({
 
-                _id: photoId,
+                _id:
+                    photoId,
 
-                isDeleted: false
+                isDeleted:
+                    false
 
             });
 
@@ -440,9 +540,11 @@ export const movePhotoToFolder = async (
         const folder =
             await Folder.findOne({
 
-                _id: folderId,
+                _id:
+                    folderId,
 
-                isDeleted: false
+                isDeleted:
+                    false
 
             });
 
@@ -461,9 +563,9 @@ export const movePhotoToFolder = async (
         }
 
 
-        // ---------------------------------------------
-        // MOVE FILE IN GOOGLE DRIVE
-        // ---------------------------------------------
+        // =================================================
+        // MOVE GOOGLE DRIVE FILE
+        // =================================================
 
         await moveFileToFolder(
 
@@ -474,9 +576,9 @@ export const movePhotoToFolder = async (
         );
 
 
-        // ---------------------------------------------
+        // =================================================
         // UPDATE MONGODB
-        // ---------------------------------------------
+        // =================================================
 
         photo.folder =
             folder._id;
@@ -494,6 +596,7 @@ export const movePhotoToFolder = async (
             photo
 
         });
+
 
     } catch (error) {
 
@@ -519,6 +622,7 @@ export const movePhotoToFolder = async (
 
 // =====================================================
 // RENAME FOLDER
+// ADMIN ONLY
 // =====================================================
 
 export const renameFolder = async (
@@ -526,11 +630,17 @@ export const renameFolder = async (
     res
 ) => {
 
+    if (!requireControllerAdmin(req, res)) {
+        return;
+    }
+
+
     try {
 
         const {
             folderId
         } = req.params;
+
 
         const {
             name
@@ -575,9 +685,11 @@ export const renameFolder = async (
         const folder =
             await Folder.findOne({
 
-                _id: folderId,
+                _id:
+                    folderId,
 
-                isDeleted: false
+                isDeleted:
+                    false
 
             });
 
@@ -596,9 +708,9 @@ export const renameFolder = async (
         }
 
 
-        // ---------------------------------------------
+        // =================================================
         // RENAME GOOGLE DRIVE FOLDER
-        // ---------------------------------------------
+        // =================================================
 
         await renameDriveFolder(
 
@@ -609,9 +721,9 @@ export const renameFolder = async (
         );
 
 
-        // ---------------------------------------------
+        // =================================================
         // UPDATE MONGODB
-        // ---------------------------------------------
+        // =================================================
 
         folder.name =
             name.trim();
@@ -629,6 +741,7 @@ export const renameFolder = async (
             folder
 
         });
+
 
     } catch (error) {
 
@@ -654,12 +767,18 @@ export const renameFolder = async (
 
 // =====================================================
 // MOVE FOLDER TO RECYCLE BIN
+// ADMIN ONLY
 // =====================================================
 
 export const deleteFolder = async (
     req,
     res
 ) => {
+
+    if (!requireControllerAdmin(req, res)) {
+        return;
+    }
+
 
     try {
 
@@ -689,9 +808,11 @@ export const deleteFolder = async (
         const folder =
             await Folder.findOne({
 
-                _id: folderId,
+                _id:
+                    folderId,
 
-                isDeleted: false
+                isDeleted:
+                    false
 
             });
 
@@ -710,9 +831,9 @@ export const deleteFolder = async (
         }
 
 
-        // ---------------------------------------------
+        // =================================================
         // MOVE FOLDER TO RECYCLE BIN
-        // ---------------------------------------------
+        // =================================================
 
         folder.isDeleted =
             true;
@@ -723,21 +844,28 @@ export const deleteFolder = async (
         await folder.save();
 
 
-        // ---------------------------------------------
-        // ALSO MOVE ITS PHOTOS TO RECYCLE BIN
-        // ---------------------------------------------
+        // =================================================
+        // MOVE PHOTOS TO RECYCLE BIN
+        // =================================================
 
         await Photo.updateMany(
 
             {
-                folder: folder._id,
-                isDeleted: false
+
+                folder:
+                    folder._id,
+
+                isDeleted:
+                    false
+
             },
 
             {
+
                 $set: {
 
-                    isDeleted: true,
+                    isDeleted:
+                        true,
 
                     deletedAt:
                         new Date()
@@ -757,6 +885,7 @@ export const deleteFolder = async (
                 "Folder moved to recycle bin"
 
         });
+
 
     } catch (error) {
 
@@ -782,6 +911,7 @@ export const deleteFolder = async (
 
 // =====================================================
 // GET DELETED FOLDERS
+// ADMIN ONLY
 // =====================================================
 
 export const getDeletedFolders = async (
@@ -789,12 +919,18 @@ export const getDeletedFolders = async (
     res
 ) => {
 
+    if (!requireControllerAdmin(req, res)) {
+        return;
+    }
+
+
     try {
 
         const folders =
             await Folder.find({
 
-                isDeleted: true
+                isDeleted:
+                    true
 
             })
             .populate(
@@ -802,7 +938,10 @@ export const getDeletedFolders = async (
                 "name"
             )
             .sort({
-                deletedAt: -1
+
+                deletedAt:
+                    -1
+
             });
 
 
@@ -813,6 +952,7 @@ export const getDeletedFolders = async (
             folders
 
         });
+
 
     } catch (error) {
 
@@ -838,12 +978,18 @@ export const getDeletedFolders = async (
 
 // =====================================================
 // RESTORE FOLDER
+// ADMIN ONLY
 // =====================================================
 
 export const restoreFolder = async (
     req,
     res
 ) => {
+
+    if (!requireControllerAdmin(req, res)) {
+        return;
+    }
+
 
     try {
 
@@ -855,9 +1001,11 @@ export const restoreFolder = async (
         const folder =
             await Folder.findOne({
 
-                _id: folderId,
+                _id:
+                    folderId,
 
-                isDeleted: true
+                isDeleted:
+                    true
 
             });
 
@@ -876,9 +1024,9 @@ export const restoreFolder = async (
         }
 
 
-        // ---------------------------------------------
+        // =================================================
         // RESTORE FOLDER
-        // ---------------------------------------------
+        // =================================================
 
         folder.isDeleted =
             false;
@@ -889,25 +1037,31 @@ export const restoreFolder = async (
         await folder.save();
 
 
-        // ---------------------------------------------
-        // RESTORE ITS PHOTOS
-        // ---------------------------------------------
+        // =================================================
+        // RESTORE PHOTOS
+        // =================================================
 
         await Photo.updateMany(
 
             {
-                folder: folder._id,
 
-                isDeleted: true
+                folder:
+                    folder._id,
+
+                isDeleted:
+                    true
 
             },
 
             {
+
                 $set: {
 
-                    isDeleted: false,
+                    isDeleted:
+                        false,
 
-                    deletedAt: null
+                    deletedAt:
+                        null
 
                 }
 
@@ -926,6 +1080,7 @@ export const restoreFolder = async (
             folder
 
         });
+
 
     } catch (error) {
 
@@ -951,6 +1106,7 @@ export const restoreFolder = async (
 
 // =====================================================
 // PERMANENTLY DELETE FOLDER
+// ADMIN ONLY
 // =====================================================
 
 export const permanentlyDeleteFolder =
@@ -958,6 +1114,11 @@ export const permanentlyDeleteFolder =
         req,
         res
     ) => {
+
+        if (!requireControllerAdmin(req, res)) {
+            return;
+        }
+
 
         try {
 
@@ -969,9 +1130,11 @@ export const permanentlyDeleteFolder =
             const folder =
                 await Folder.findOne({
 
-                    _id: folderId,
+                    _id:
+                        folderId,
 
-                    isDeleted: true
+                    isDeleted:
+                        true
 
                 });
 
@@ -990,21 +1153,22 @@ export const permanentlyDeleteFolder =
             }
 
 
-            // -----------------------------------------
+            // =================================================
             // FIND DELETED PHOTOS
-            // -----------------------------------------
+            // =================================================
 
             const photos =
                 await Photo.find({
 
-                    folder: folder._id
+                    folder:
+                        folder._id
 
                 });
 
 
-            // -----------------------------------------
+            // =================================================
             // DELETE PHOTOS FROM GOOGLE DRIVE
-            // -----------------------------------------
+            // =================================================
 
             for (
                 const photo of photos
@@ -1013,14 +1177,21 @@ export const permanentlyDeleteFolder =
                 try {
 
                     await permanentlyDeleteFromDrive(
+
                         photo.driveFileId
+
                     );
 
-                } catch (driveError) {
+                } catch (
+                    driveError
+                ) {
 
                     console.error(
+
                         "DRIVE PHOTO DELETE ERROR:",
+
                         driveError
+
                     );
 
                 }
@@ -1028,43 +1199,53 @@ export const permanentlyDeleteFolder =
             }
 
 
-            // -----------------------------------------
+            // =================================================
             // DELETE PHOTO METADATA
-            // -----------------------------------------
+            // =================================================
 
             await Photo.deleteMany({
 
-                folder: folder._id
+                folder:
+                    folder._id
 
             });
 
 
-            // -----------------------------------------
+            // =================================================
             // DELETE DRIVE FOLDER
-            // -----------------------------------------
+            // =================================================
 
             try {
 
                 await permanentlyDeleteFromDrive(
+
                     folder.driveFolderId
+
                 );
 
-            } catch (driveError) {
+            } catch (
+                driveError
+            ) {
 
                 console.error(
+
                     "DRIVE FOLDER DELETE ERROR:",
+
                     driveError
+
                 );
 
             }
 
 
-            // -----------------------------------------
+            // =================================================
             // DELETE MONGODB FOLDER
-            // -----------------------------------------
+            // =================================================
 
             await Folder.findByIdAndDelete(
+
                 folder._id
+
             );
 
 
@@ -1077,11 +1258,15 @@ export const permanentlyDeleteFolder =
 
             });
 
+
         } catch (error) {
 
             console.error(
+
                 "PERMANENT FOLDER DELETE ERROR:",
+
                 error
+
             );
 
 

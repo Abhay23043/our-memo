@@ -3,11 +3,13 @@ import {
     useState
 } from "react";
 
+
 import {
     NavLink,
     Link,
     useLocation
 } from "react-router-dom";
+
 
 import {
     Heart,
@@ -21,14 +23,34 @@ import {
 } from "lucide-react";
 
 
+import {
+    useAuth
+} from "../context/AuthContext";
+
+
 function Navbar() {
 
-    const [mobileMenuOpen, setMobileMenuOpen] =
-        useState(false);
+    const [
+        mobileMenuOpen,
+        setMobileMenuOpen
+    ] = useState(false);
 
 
     const location =
         useLocation();
+
+
+    const {
+        user
+    } = useAuth();
+
+
+    // =================================================
+    // CHECK ADMIN
+    // =================================================
+
+    const isAdmin =
+        user?.role === "admin";
 
 
     // =================================================
@@ -37,9 +59,7 @@ function Navbar() {
 
     useEffect(() => {
 
-        setMobileMenuOpen(
-            false
-        );
+        setMobileMenuOpen(false);
 
     }, [
         location.pathname
@@ -52,9 +72,7 @@ function Navbar() {
 
     const closeMobileMenu = () => {
 
-        setMobileMenuOpen(
-            false
-        );
+        setMobileMenuOpen(false);
 
     };
 
@@ -68,23 +86,51 @@ function Navbar() {
     }) => {
 
         return (
+
             isActive
                 ? "nav-link active"
                 : "nav-link"
+
         );
 
     };
 
+
+    // =================================================
+    // MOBILE NAV LINK CLASS
+    // =================================================
 
     const getMobileNavLinkClass = ({
         isActive
     }) => {
 
         return (
+
             isActive
                 ? "mobile-nav-link active"
                 : "mobile-nav-link"
+
         );
+
+    };
+
+
+    // =================================================
+    // DISABLED PROFILE
+    // NORMAL USER ONLY
+    //
+    // Profile is visible but not accessible.
+    // =================================================
+
+    const handleDisabledProfile = (
+        event
+    ) => {
+
+        if (!isAdmin) {
+
+            event.preventDefault();
+
+        }
 
     };
 
@@ -132,113 +178,117 @@ function Navbar() {
 
                 {/* =====================================
                     DESKTOP NAVIGATION
+                    ADMIN ONLY
                 ===================================== */}
 
-                <nav className="desktop-nav">
+                {isAdmin && (
+
+                    <nav className="desktop-nav">
 
 
-                    {/* DASHBOARD */}
+                        {/* DASHBOARD */}
 
-                    <NavLink
-                        to="/"
-                        end
-                        className={
-                            getNavLinkClass
-                        }
-                    >
+                        <NavLink
+                            to="/dashboard"
+                            className={
+                                getNavLinkClass
+                            }
+                        >
 
-                        <Home
-                            size={17}
-                        />
+                            <Home
+                                size={17}
+                            />
 
-                        <span>
-                            Dashboard
-                        </span>
+                            <span>
+                                Dashboard
+                            </span>
 
-                    </NavLink>
-
-
-                    {/* GALLERY */}
-
-                    <NavLink
-                        to="/gallery"
-                        className={
-                            getNavLinkClass
-                        }
-                    >
-
-                        <Images
-                            size={17}
-                        />
-
-                        <span>
-                            Gallery
-                        </span>
-
-                    </NavLink>
+                        </NavLink>
 
 
-                    {/* FOLDERS */}
+                        {/* GALLERY */}
 
-                    <NavLink
-                        to="/folders"
-                        className={
-                            getNavLinkClass
-                        }
-                    >
+                        <NavLink
+                            to="/gallery"
+                            className={
+                                getNavLinkClass
+                            }
+                        >
 
-                        <Folder
-                            size={17}
-                        />
+                            <Images
+                                size={17}
+                            />
 
-                        <span>
-                            Folders
-                        </span>
+                            <span>
+                                Gallery
+                            </span>
 
-                    </NavLink>
-
-
-                    {/* FAVORITES */}
-
-                    <NavLink
-                        to="/favorites"
-                        className={
-                            getNavLinkClass
-                        }
-                    >
-
-                        <Heart
-                            size={17}
-                        />
-
-                        <span>
-                            Favorites
-                        </span>
-
-                    </NavLink>
+                        </NavLink>
 
 
-                    {/* RECYCLE BIN */}
+                        {/* FOLDERS */}
 
-                    <NavLink
-                        to="/recycle-bin"
-                        className={
-                            getNavLinkClass
-                        }
-                    >
+                        <NavLink
+                            to="/folders"
+                            className={
+                                getNavLinkClass
+                            }
+                        >
 
-                        <Trash2
-                            size={17}
-                        />
+                            <Folder
+                                size={17}
+                            />
 
-                        <span>
-                            Recycle Bin
-                        </span>
+                            <span>
+                                Folders
+                            </span>
 
-                    </NavLink>
+                        </NavLink>
 
 
-                </nav>
+                        {/* FAVORITES */}
+
+                        <NavLink
+                            to="/favorites"
+                            className={
+                                getNavLinkClass
+                            }
+                        >
+
+                            <Heart
+                                size={17}
+                            />
+
+                            <span>
+                                Favorites
+                            </span>
+
+                        </NavLink>
+
+
+                        {/* RECYCLE BIN */}
+
+                        <NavLink
+                            to="/recycle-bin"
+                            className={
+                                getNavLinkClass
+                            }
+                        >
+
+                            <Trash2
+                                size={17}
+                            />
+
+                            <span>
+                                Recycle Bin
+                            </span>
+
+                        </NavLink>
+
+
+                    </nav>
+
+                )}
 
 
                 {/* =====================================
@@ -248,57 +298,95 @@ function Navbar() {
                 <div className="navbar-actions">
 
 
-                    {/* PROFILE */}
+                    {/* =================================
+                        PROFILE
 
-                  <Link
-                    to="/profile"
-                    className="profile-button"
-                    aria-label="Profile"
-                >
-                    <User
-                        size={18}
-                    />
-                </Link>
+                        ADMIN:
+                        Accessible
+
+                        NORMAL USER:
+                        Visible but disabled
+                    ================================= */}
+
+                    {isAdmin ? (
+
+                        <Link
+                            to="/profile"
+                            className="profile-button"
+                            aria-label="Profile"
+                        >
+
+                            <User
+                                size={18}
+                            />
+
+                        </Link>
+
+                    ) : (
+
+                        <button
+                            type="button"
+                            className="profile-button"
+                            aria-label="Profile"
+                            aria-disabled="true"
+                            onClick={
+                                handleDisabledProfile
+                            }
+                            title="Profile is available to admin only"
+                        >
+
+                            <User
+                                size={18}
+                            />
+
+                        </button>
+
+                    )}
 
 
                     {/* =================================
                         MOBILE MENU BUTTON
+                        ADMIN ONLY
                     ================================= */}
 
-                    <button
-                        type="button"
-                        className="mobile-menu-button"
-                        onClick={() =>
-                            setMobileMenuOpen(
-                                previous =>
-                                    !previous
-                            )
-                        }
-                        aria-label={
-                            mobileMenuOpen
-                                ? "Close menu"
-                                : "Open menu"
-                        }
-                        aria-expanded={
-                            mobileMenuOpen
-                        }
-                    >
+                    {isAdmin && (
 
-                        {mobileMenuOpen ? (
+                        <button
+                            type="button"
+                            className="mobile-menu-button"
+                            onClick={() =>
+                                setMobileMenuOpen(
+                                    previous =>
+                                        !previous
+                                )
+                            }
+                            aria-label={
+                                mobileMenuOpen
+                                    ? "Close menu"
+                                    : "Open menu"
+                            }
+                            aria-expanded={
+                                mobileMenuOpen
+                            }
+                        >
 
-                            <X
-                                size={23}
-                            />
+                            {mobileMenuOpen ? (
 
-                        ) : (
+                                <X
+                                    size={23}
+                                />
 
-                            <Menu
-                                size={23}
-                            />
+                            ) : (
 
-                        )}
+                                <Menu
+                                    size={23}
+                                />
 
-                    </button>
+                            )}
+
+                        </button>
+
+                    )}
 
 
                 </div>
@@ -309,9 +397,11 @@ function Navbar() {
 
             {/* =========================================
                 MOBILE NAVIGATION
+                ADMIN ONLY
             ========================================= */}
 
-            {mobileMenuOpen && (
+            {isAdmin &&
+                mobileMenuOpen && (
 
                 <div className="mobile-menu">
 
@@ -319,8 +409,7 @@ function Navbar() {
                     {/* DASHBOARD */}
 
                     <NavLink
-                        to="/"
-                        end
+                        to="/dashboard"
                         className={
                             getMobileNavLinkClass
                         }
@@ -435,6 +524,7 @@ function Navbar() {
                 </div>
 
             )}
+
 
         </header>
 
