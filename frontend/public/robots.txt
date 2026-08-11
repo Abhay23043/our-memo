@@ -3,10 +3,13 @@ Allow: /
 
 Disallow: /dashboard
 Disallow: /gallery
-Disallow: /favorites
 Disallow: /folders
+Disallow: /favorites
 Disallow: /recycle-bin
 Disallow: /profile
 Disallow: /admin
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
 
 Sitemap: https://ourmemo.vercel.app/sitemap.xml
