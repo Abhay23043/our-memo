@@ -15,15 +15,25 @@ import {
 
 import api from "../services/api";
 
-import { useAuth } from "../context/AuthContext";
+import {
+    useAuth
+} from "../context/AuthContext";
 
 
 function Login() {
 
-    const navigate = useNavigate();
+    const navigate =
+        useNavigate();
 
-    const { setUser } = useAuth();
 
+    const {
+        setUser
+    } = useAuth();
+
+
+    // =================================================
+    // FORM STATES
+    // =================================================
 
     const [email, setEmail] =
         useState("");
@@ -31,8 +41,18 @@ function Login() {
     const [password, setPassword] =
         useState("");
 
+
+    // =================================================
+    // PASSWORD VISIBILITY
+    // =================================================
+
     const [showPassword, setShowPassword] =
         useState(false);
+
+
+    // =================================================
+    // UI STATES
+    // =================================================
 
     const [loading, setLoading] =
         useState(false);
@@ -41,64 +61,141 @@ function Login() {
         useState("");
 
 
-    const handleSubmit = async (event) => {
+    // =================================================
+    // LOGIN
+    // =================================================
 
-        event.preventDefault();
+    const handleSubmit =
+        async (event) => {
 
-        setError("");
-
-        setLoading(true);
+            event.preventDefault();
 
 
-        try {
+            setError("");
 
-            const response = await api.post(
-                "/auth/login",
-                {
-                    email,
-                    password
+            setLoading(true);
+
+
+            try {
+
+                // =========================================
+                // LOGIN REQUEST
+                // =========================================
+
+                const response =
+                    await api.post(
+                        "/auth/login",
+                        {
+                            email:
+                                email
+                                    .trim()
+                                    .toLowerCase(),
+
+                            password
+                        }
+                    );
+
+
+                // =========================================
+                // LOGIN SUCCESS
+                // =========================================
+
+                if (
+                    response.data.success
+                ) {
+
+                    const loggedInUser =
+                        response.data.user;
+
+
+                    // =====================================
+                    // SAVE USER IN AUTH CONTEXT
+                    // =====================================
+
+                    setUser(
+                        loggedInUser
+                    );
+
+
+                    // =====================================
+                    // ROLE BASED REDIRECT
+                    // =====================================
+
+                    if (
+                        loggedInUser?.role ===
+                        "admin"
+                    ) {
+
+                        // ADMIN
+                        // → DASHBOARD
+
+                        navigate(
+                            "/dashboard",
+                            {
+                                replace: true
+                            }
+                        );
+
+                    } else {
+
+                        // NORMAL USER
+                        // → PUBLIC LANDING PAGE
+
+                        navigate(
+                            "/",
+                            {
+                                replace: true
+                            }
+                        );
+
+                    }
+
+
+                } else {
+
+                    setError(
+                        response.data.message ||
+                        "Login failed"
+                    );
+
                 }
-            );
 
 
-            if (response.data.success) {
+            } catch (error) {
 
-                setUser(
-                    response.data.user
+                console.error(
+                    "LOGIN ERROR:",
+                    error
                 );
 
-                navigate("/");
-
-            } else {
 
                 setError(
-                    response.data.message ||
-                    "Login failed"
+
+                    error.response?.data?.message ||
+
+                    "Unable to login. Please try again."
+
                 );
+
+            } finally {
+
+                setLoading(false);
 
             }
 
-        } catch (error) {
+        };
 
-            setError(
-                error.response?.data?.message ||
-                "Unable to login. Please try again."
-            );
 
-        } finally {
-
-            setLoading(false);
-
-        }
-
-    };
-
+    // =================================================
+    // UI
+    // =================================================
 
     return (
 
         <main className="login-page">
 
             <div className="login-card">
+
 
                 {/* =========================================
                     LOGO
@@ -126,6 +223,7 @@ function Login() {
                     Welcome back
                 </h1>
 
+
                 <p className="login-subtitle">
                     Your memories are waiting for you.
                 </p>
@@ -151,9 +249,12 @@ function Login() {
                 ========================================= */}
 
                 <form
-                    onSubmit={handleSubmit}
+                    onSubmit={
+                        handleSubmit
+                    }
                     className="login-form"
                 >
+
 
                     {/* =====================================
                         EMAIL
@@ -165,18 +266,29 @@ function Login() {
                             Email
                         </label>
 
+
                         <div className="input-wrapper">
 
-                            <Mail size={18} />
+                            <Mail
+                                size={18}
+                            />
+
 
                             <input
                                 type="email"
                                 placeholder="you@example.com"
-                                value={email}
-                                onChange={(event) =>
-                                    setEmail(
-                                        event.target.value
-                                    )
+                                value={
+                                    email
+                                }
+                                onChange={
+                                    (event) =>
+                                        setEmail(
+                                            event.target.value
+                                        )
+                                }
+                                autoComplete="email"
+                                disabled={
+                                    loading
                                 }
                                 required
                             />
@@ -196,9 +308,13 @@ function Login() {
                             Password
                         </label>
 
+
                         <div className="input-wrapper">
 
-                            <Lock size={18} />
+                            <Lock
+                                size={18}
+                            />
+
 
                             <input
                                 type={
@@ -207,17 +323,26 @@ function Login() {
                                         : "password"
                                 }
                                 placeholder="Enter your password"
-                                value={password}
-                                onChange={(event) =>
-                                    setPassword(
-                                        event.target.value
-                                    )
+                                value={
+                                    password
+                                }
+                                onChange={
+                                    (event) =>
+                                        setPassword(
+                                            event.target.value
+                                        )
+                                }
+                                autoComplete="current-password"
+                                disabled={
+                                    loading
                                 }
                                 required
                             />
 
 
-                            {/* FORGOT PASSWORD */}
+                            {/* =================================
+                                FORGOT PASSWORD
+                            ================================= */}
 
                             <Link
                                 to="/forgot-password"
@@ -227,22 +352,42 @@ function Login() {
                             </Link>
 
 
-                            {/* PASSWORD VISIBILITY */}
+                            {/* =================================
+                                PASSWORD VISIBILITY
+                            ================================= */}
 
                             <button
                                 type="button"
                                 className="password-toggle"
                                 onClick={() =>
                                     setShowPassword(
-                                        !showPassword
+                                        current =>
+                                            !current
                                     )
+                                }
+                                disabled={
+                                    loading
+                                }
+                                aria-label={
+                                    showPassword
+                                        ? "Hide password"
+                                        : "Show password"
                                 }
                             >
 
-                                {showPassword
-                                    ? <EyeOff size={18} />
-                                    : <Eye size={18} />
-                                }
+                                {showPassword ? (
+
+                                    <EyeOff
+                                        size={18}
+                                    />
+
+                                ) : (
+
+                                    <Eye
+                                        size={18}
+                                    />
+
+                                )}
 
                             </button>
 
@@ -258,12 +403,17 @@ function Login() {
                     <button
                         type="submit"
                         className="login-button"
-                        disabled={loading}
+                        disabled={
+                            loading
+                        }
                     >
 
                         {loading
+
                             ? "Signing in..."
+
                             : "Sign in"
+
                         }
 
                     </button>
@@ -278,6 +428,7 @@ function Login() {
                 <p className="login-register">
 
                     Don't have an account?{" "}
+
 
                     <Link
                         to="/register"
@@ -296,6 +447,7 @@ function Login() {
                 <p className="login-footer">
                     Our memories, just for us. ❤️
                 </p>
+
 
             </div>
 

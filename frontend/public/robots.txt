@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+Disallow: /dashboard
+Disallow: /gallery
+Disallow: /favorites
+Disallow: /folders
+Disallow: /recycle-bin
+Disallow: /profile
+Disallow: /admin
+
+Sitemap: https://ourmemo.vercel.app/sitemap.xml

@@ -16,7 +16,8 @@ import {
     ArrowRight,
     Images,
     Clock3,
-    Trash2
+    Trash2,
+    X
 } from "lucide-react";
 
 import api from "../services/api";
@@ -60,6 +61,16 @@ function Dashboard() {
 
     const [selectedPhoto, setSelectedPhoto] =
         useState(null);
+
+    // Delete confirmation modal
+    const [deleteConfirmPhoto, setDeleteConfirmPhoto] =
+        useState(null);
+
+    const [deleteLoading, setDeleteLoading] =
+        useState(false);
+
+    const [deleteError, setDeleteError] =
+        useState("");
 
 
     // =================================================
@@ -604,18 +615,27 @@ function Dashboard() {
     // =================================================
 
     const handleDashboardDelete =
-        async (
-            photo
-        ) => {
+        (photo) => {
 
-            const shouldDelete =
-                window.confirm(
-                    "Move this photo to Recycle Bin?"
-                );
+            setDeleteError("");
 
+            setDeleteConfirmPhoto(
+                photo
+            );
+
+        };
+
+
+    // =================================================
+    // CONFIRM PHOTO DELETE
+    // =================================================
+
+    const handleConfirmDashboardDelete =
+        async () => {
 
             if (
-                !shouldDelete
+                !deleteConfirmPhoto ||
+                deleteLoading
             ) {
 
                 return;
@@ -625,10 +645,15 @@ function Dashboard() {
 
             try {
 
+                setDeleteLoading(true);
+
+                setDeleteError("");
+
+
                 const response =
                     await api.delete(
 
-                        `/api/photos/${photo._id}`
+                        `/api/photos/${deleteConfirmPhoto._id}`
 
                     );
 
@@ -637,7 +662,7 @@ function Dashboard() {
                     !response.data.success
                 ) {
 
-                    alert(
+                    setDeleteError(
                         response.data.message ||
                         "Unable to move photo to recycle bin."
                     );
@@ -659,7 +684,7 @@ function Dashboard() {
                                     currentPhoto._id
                                 ) !==
                                 String(
-                                    photo._id
+                                    deleteConfirmPhoto._id
                                 )
                         )
                 );
@@ -672,7 +697,7 @@ function Dashboard() {
                 setRecycleBinPhotos(
                     currentPhotos => [
                         ...currentPhotos,
-                        photo
+                        deleteConfirmPhoto
                     ]
                 );
 
@@ -687,7 +712,7 @@ function Dashboard() {
                         selectedPhoto._id
                     ) ===
                     String(
-                        photo._id
+                        deleteConfirmPhoto._id
                     )
                 ) {
 
@@ -698,6 +723,10 @@ function Dashboard() {
                 }
 
 
+                // Close confirmation modal
+
+                setDeleteConfirmPhoto(null);
+
             } catch (error) {
 
                 console.error(
@@ -706,12 +735,30 @@ function Dashboard() {
                 );
 
 
-                alert(
+                setDeleteError(
                     error.response?.data?.message ||
                     "Unable to move photo to recycle bin."
                 );
 
+            } finally {
+
+                setDeleteLoading(false);
+
             }
+
+        };
+
+
+    const handleCancelDashboardDelete =
+        () => {
+
+            if (deleteLoading) {
+                return;
+            }
+
+            setDeleteConfirmPhoto(null);
+
+            setDeleteError("");
 
         };
 
@@ -1426,6 +1473,204 @@ function Dashboard() {
 
 
             </div>
+
+
+            {/* =========================================
+                DELETE CONFIRMATION MODAL
+            ========================================= */}
+
+            {deleteConfirmPhoto && (
+
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="delete-photo-title"
+                    onClick={(event) => {
+                        if (event.target === event.currentTarget) {
+                            handleCancelDashboardDelete();
+                        }
+                    }}
+                    style={{
+                        position: "fixed",
+                        inset: 0,
+                        zIndex: 10000,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "16px",
+                        background: "rgba(0, 0, 0, 0.55)",
+                        backdropFilter: "blur(6px)"
+                    }}
+                >
+
+                    <div
+                        style={{
+                            position: "relative",
+                            width: "min(430px, 100%)",
+                            maxHeight: "calc(100vh - 32px)",
+                            overflowY: "auto",
+                            padding: "26px",
+                            border: "1px solid var(--border)",
+                            borderRadius: "20px",
+                            background: "var(--surface)",
+                            color: "var(--text)",
+                            boxShadow: "0 24px 70px rgba(0, 0, 0, 0.25)",
+                            textAlign: "center",
+                            boxSizing: "border-box"
+                        }}
+                    >
+
+                        <button
+                            type="button"
+                            onClick={handleCancelDashboardDelete}
+                            disabled={deleteLoading}
+                            aria-label="Close"
+                            style={{
+                                position: "absolute",
+                                top: "12px",
+                                right: "12px",
+                                width: "34px",
+                                height: "34px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                border: "none",
+                                borderRadius: "10px",
+                                background: "var(--surface-soft)",
+                                color: "var(--text-secondary)",
+                                cursor: deleteLoading ? "not-allowed" : "pointer",
+                                opacity: deleteLoading ? 0.5 : 1
+                            }}
+                        >
+                            <X size={17} />
+                        </button>
+
+
+                        <div
+                            style={{
+                                width: "54px",
+                                height: "54px",
+                                margin: "0 auto 18px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                borderRadius: "16px",
+                                background: "rgba(220, 38, 38, 0.10)",
+                                color: "#dc2626"
+                            }}
+                        >
+                            <Trash2 size={25} />
+                        </div>
+
+
+                        <h2
+                            id="delete-photo-title"
+                            style={{
+                                margin: "0 0 9px",
+                                fontSize: "21px",
+                                lineHeight: 1.25,
+                                letterSpacing: "-0.02em"
+                            }}
+                        >
+                            Move to Recycle Bin?
+                        </h2>
+
+
+                        <p
+                            style={{
+                                margin: "0 auto 20px",
+                                maxWidth: "350px",
+                                color: "var(--text-secondary)",
+                                fontSize: "13px",
+                                lineHeight: 1.65,
+                                overflowWrap: "anywhere"
+                            }}
+                        >
+                            This photo will be moved to the Recycle Bin.
+                            You can restore it later if needed.
+                        </p>
+
+
+                        {deleteError && (
+
+                            <div
+                                style={{
+                                    marginBottom: "16px",
+                                    padding: "10px 12px",
+                                    borderRadius: "10px",
+                                    background: "rgba(220, 38, 38, 0.08)",
+                                    color: "#dc2626",
+                                    fontSize: "12px",
+                                    lineHeight: 1.5
+                                }}
+                            >
+                                {deleteError}
+                            </div>
+
+                        )}
+
+
+                        <div
+                            style={{
+                                display: "flex",
+                                gap: "10px",
+                                width: "100%"
+                            }}
+                        >
+
+                            <button
+                                type="button"
+                                onClick={handleCancelDashboardDelete}
+                                disabled={deleteLoading}
+                                style={{
+                                    flex: 1,
+                                    minHeight: "44px",
+                                    padding: "10px 14px",
+                                    border: "1px solid var(--border)",
+                                    borderRadius: "11px",
+                                    background: "var(--surface)",
+                                    color: "var(--text)",
+                                    fontSize: "13px",
+                                    fontWeight: 600,
+                                    cursor: deleteLoading ? "not-allowed" : "pointer",
+                                    opacity: deleteLoading ? 0.55 : 1
+                                }}
+                            >
+                                Cancel
+                            </button>
+
+
+                            <button
+                                type="button"
+                                onClick={handleConfirmDashboardDelete}
+                                disabled={deleteLoading}
+                                style={{
+                                    flex: 1,
+                                    minHeight: "44px",
+                                    padding: "10px 14px",
+                                    border: "none",
+                                    borderRadius: "11px",
+                                    background: "#dc2626",
+                                    color: "#ffffff",
+                                    fontSize: "13px",
+                                    fontWeight: 700,
+                                    cursor: deleteLoading ? "not-allowed" : "pointer",
+                                    opacity: deleteLoading ? 0.65 : 1
+                                }}
+                            >
+                                {deleteLoading
+                                    ? "Moving..."
+                                    : "Move to Recycle Bin"
+                                }
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            )}
 
 
             {/* =========================================

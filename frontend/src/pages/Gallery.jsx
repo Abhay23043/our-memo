@@ -1090,6 +1090,12 @@ function PhotoCard({
     const [deleteLoading, setDeleteLoading] =
         useState(false);
 
+    const [deleteModalOpen, setDeleteModalOpen] =
+        useState(false);
+
+    const [deleteError, setDeleteError] =
+        useState("");
+
 
     // =================================================
     // LOAD IMAGE
@@ -1288,7 +1294,7 @@ function PhotoCard({
     // DELETE
     // =================================================
 
-    const handleDelete = async (
+    const handleDelete = (
         event
     ) => {
 
@@ -1307,14 +1313,21 @@ function PhotoCard({
         }
 
 
-        const confirmed =
-            window.confirm(
-                "Move this photo to Recycle Bin?"
-            );
+        setDeleteError("");
 
+        setDeleteModalOpen(true);
+
+    };
+
+
+    // =================================================
+    // CONFIRM DELETE
+    // =================================================
+
+    const handleConfirmDelete = async () => {
 
         if (
-            !confirmed
+            deleteLoading
         ) {
 
             return;
@@ -1324,16 +1337,14 @@ function PhotoCard({
 
         try {
 
-            setDeleteLoading(
-                true
-            );
+            setDeleteLoading(true);
+
+            setDeleteError("");
 
 
             const response =
                 await api.delete(
-
                     `/api/photos/${photo._id}`
-
                 );
 
 
@@ -1341,13 +1352,15 @@ function PhotoCard({
                 response.data.success
             ) {
 
+                setDeleteModalOpen(false);
+
                 onPhotoDeleted(
                     photo._id
                 );
 
             } else {
 
-                alert(
+                setDeleteError(
                     response.data.message ||
                     "Unable to move photo to Recycle Bin"
                 );
@@ -1362,18 +1375,38 @@ function PhotoCard({
             );
 
 
-            alert(
+            setDeleteError(
                 error.response?.data?.message ||
                 "Unable to move photo to Recycle Bin"
             );
 
         } finally {
 
-            setDeleteLoading(
-                false
-            );
+            setDeleteLoading(false);
 
         }
+
+    };
+
+
+    // =================================================
+    // CLOSE DELETE MODAL
+    // =================================================
+
+    const handleCloseDeleteModal = () => {
+
+        if (
+            deleteLoading
+        ) {
+
+            return;
+
+        }
+
+
+        setDeleteModalOpen(false);
+
+        setDeleteError("");
 
     };
 
@@ -1564,6 +1597,220 @@ function PhotoCard({
                 )}
 
             </div>
+
+            {/* =================================================
+                DELETE CONFIRMATION MODAL
+            ================================================= */}
+
+            {deleteModalOpen && (
+
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby={`delete-photo-title-${photo._id}`}
+                    onClick={handleCloseDeleteModal}
+                    style={{
+                        position: "fixed",
+                        inset: 0,
+                        zIndex: 10000,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "18px",
+                        background: "rgba(0, 0, 0, 0.58)",
+                        backdropFilter: "blur(6px)"
+                    }}
+                >
+
+                    <div
+                        onClick={event =>
+                            event.stopPropagation()
+                        }
+                        style={{
+                            width: "min(420px, 100%)",
+                            maxHeight: "calc(100vh - 36px)",
+                            overflowY: "auto",
+                            padding: "24px",
+                            borderRadius: "20px",
+                            background: "var(--surface, #ffffff)",
+                            color: "var(--text, #111111)",
+                            border: "1px solid var(--border, #e5e5e5)",
+                            boxShadow: "0 24px 70px rgba(0, 0, 0, 0.25)"
+                        }}
+                    >
+
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                marginBottom: "4px"
+                            }}
+                        >
+
+                            <button
+                                type="button"
+                                onClick={handleCloseDeleteModal}
+                                disabled={deleteLoading}
+                                aria-label="Close"
+                                style={{
+                                    width: "34px",
+                                    height: "34px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    border: "none",
+                                    borderRadius: "10px",
+                                    background: "var(--surface-soft, #f5f5f5)",
+                                    color: "var(--text-secondary, #666)",
+                                    cursor: deleteLoading
+                                        ? "not-allowed"
+                                        : "pointer",
+                                    opacity: deleteLoading ? 0.5 : 1
+                                }}
+                            >
+                                <X size={18} />
+                            </button>
+
+                        </div>
+
+
+                        <div
+                            style={{
+                                width: "54px",
+                                height: "54px",
+                                margin: "0 auto 18px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                borderRadius: "16px",
+                                background: "var(--surface-soft, #f5f5f5)"
+                            }}
+                        >
+                            <Trash2 size={25} />
+                        </div>
+
+
+                        <div
+                            style={{
+                                textAlign: "center"
+                            }}
+                        >
+
+                            <h2
+                                id={`delete-photo-title-${photo._id}`}
+                                style={{
+                                    margin: "0 0 10px",
+                                    fontSize: "20px",
+                                    lineHeight: "1.3",
+                                    letterSpacing: "-0.02em"
+                                }}
+                            >
+                                Move to Recycle Bin?
+                            </h2>
+
+
+                            <p
+                                style={{
+                                    margin: "0 auto",
+                                    maxWidth: "340px",
+                                    color: "var(--text-secondary, #666)",
+                                    fontSize: "13px",
+                                    lineHeight: "1.65"
+                                }}
+                            >
+                                This photo will be moved to your
+                                Recycle Bin. You can restore it
+                                later if needed.
+                            </p>
+
+
+                            {deleteError && (
+
+                                <div
+                                    style={{
+                                        marginTop: "16px",
+                                        padding: "11px 13px",
+                                        borderRadius: "10px",
+                                        background: "rgba(220, 38, 38, 0.08)",
+                                        color: "#dc2626",
+                                        fontSize: "12px",
+                                        lineHeight: "1.5",
+                                        textAlign: "left"
+                                    }}
+                                >
+                                    {deleteError}
+                                </div>
+
+                            )}
+
+
+                            <div
+                                style={{
+                                    display: "flex",
+                                    gap: "10px",
+                                    marginTop: "22px"
+                                }}
+                            >
+
+                                <button
+                                    type="button"
+                                    onClick={handleCloseDeleteModal}
+                                    disabled={deleteLoading}
+                                    style={{
+                                        flex: 1,
+                                        minHeight: "44px",
+                                        padding: "10px 14px",
+                                        border: "1px solid var(--border, #e5e5e5)",
+                                        borderRadius: "11px",
+                                        background: "var(--surface, #fff)",
+                                        color: "var(--text, #111)",
+                                        fontSize: "13px",
+                                        fontWeight: 600,
+                                        cursor: deleteLoading
+                                            ? "not-allowed"
+                                            : "pointer",
+                                        opacity: deleteLoading ? 0.55 : 1
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmDelete}
+                                    disabled={deleteLoading}
+                                    style={{
+                                        flex: 1,
+                                        minHeight: "44px",
+                                        padding: "10px 14px",
+                                        border: "none",
+                                        borderRadius: "11px",
+                                        background: "var(--text, #111)",
+                                        color: "var(--surface, #fff)",
+                                        fontSize: "13px",
+                                        fontWeight: 600,
+                                        cursor: deleteLoading
+                                            ? "not-allowed"
+                                            : "pointer",
+                                        opacity: deleteLoading ? 0.65 : 1
+                                    }}
+                                >
+                                    {deleteLoading
+                                        ? "Moving..."
+                                        : "Move to Recycle Bin"
+                                    }
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            )}
 
         </article>
 
